@@ -1,0 +1,105 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 55 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: digisac, messages, painel, portal, staticfiles
+  Apply all migrations: admin, auth, bot, chamados, contenttypes, orientacoes, sessions
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying auth.0001_initial... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying bot.0001_initial... OK
+  Applying chamados.0001_initial... OK
+  Applying orientacoes.0001_initial... OK
+  Applying sessions.0001_initial...test_analista_responde_e_resolve (apps.bot.tests.test_orquestrador.OrquestradorTest.test_analista_responde_e_resolve) ... ok
+test_canal_whatsapp_desligado_nao_afeta_o_portal (apps.bot.tests.test_orquestrador.OrquestradorTest.test_canal_whatsapp_desligado_nao_afeta_o_portal) ... ok
+test_chamado_nao_duplica_na_mesma_conversa (apps.bot.tests.test_orquestrador.OrquestradorTest.test_chamado_nao_duplica_na_mesma_conversa) ... ok
+test_conversa_inativa_expira (apps.bot.tests.test_orquestrador.OrquestradorTest.test_conversa_inativa_expira) ... ok
+test_falha_do_whatsapp_nao_perde_mensagens (apps.bot.tests.test_orquestrador.OrquestradorTest.test_falha_do_whatsapp_nao_perde_mensagens) ... 2026-11-23 16:05:59,033 ERROR apps.canais.whatsapp: Falha ao enviar mensagem pelo WhatsApp (conversa #1).
+Traceback (most recent call last):
+  File "C:\Users\leticia.dias\Desktop\projetos\chatbot_ti\apps\canais\whatsapp.py", line 39, in entregar
+    self.cliente.enviar_texto(conversa.identificador, texto)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leticia.dias\Desktop\projetos\chatbot_ti\apps\bot\tests\test_orquestrador.py", line 34, in enviar_texto
+    raise ConnectionError("provedor fora do ar")
+ConnectionError: provedor fora do ar
+ok
+test_fora_do_horario_fica_na_fila_sem_perder_mensagens (apps.bot.tests.test_orquestrador.OrquestradorTest.test_fora_do_horario_fica_na_fila_sem_perder_mensagens) ... ok
+test_incidente_critico_tem_prioridade_critica (apps.bot.tests.test_orquestrador.OrquestradorTest.test_incidente_critico_tem_prioridade_critica) ... ok
+test_mensagem_repetida_nao_duplica (apps.bot.tests.test_orquestrador.OrquestradorTest.test_mensagem_repetida_nao_duplica) ... 2026-11-23 16:05:59,356 INFO apps.bot.orquestrador: Mensagem msg-1 já processada; ignorando.
+ok
+test_nao_resolvido_abre_chamado_com_protocolo (apps.bot.tests.test_orquestrador.OrquestradorTest.test_nao_resolvido_abre_chamado_com_protocolo) ... ok
+test_resolvido_registra_avaliacao_e_encerra (apps.bot.tests.test_orquestrador.OrquestradorTest.test_resolvido_registra_avaliacao_e_encerra) ... ok
+test_senha_nao_e_gravada (apps.bot.tests.test_orquestrador.OrquestradorTest.test_senha_nao_e_gravada) ... ok
+test_canal_desligado_ignora (apps.digisac.tests.WebhookTest.test_canal_desligado_ignora) ... ok
+test_exige_token (apps.digisac.tests.WebhookTest.test_exige_token) ... ok
+test_reenvio_do_webhook_nao_duplica (apps.digisac.tests.WebhookTest.test_reenvio_do_webhook_nao_duplica) ... 2026-11-23 16:06:00,405 INFO apps.digisac.client: [simulação] POST /api/v1/messages {'contactId': 'c1', 'text': 'Olá! 👋 Eu sou o assistente virtual da *Central de TI*.\nVou te passar as orientações padrão para os problemas mais comuns e, se não resolver, abro um chamado para a equipe de TI.\n\n🔒 _Nunca envie senhas ou códigos de verificação por aqui._'}
+2026-11-23 16:06:00,405 INFO apps.digisac.client: [simulação] POST /api/v1/messages {'contactId': 'c1', 'text': 'Para começar, qual é o seu *nome completo*?'}
+2026-11-23 16:06:00,409 INFO apps.bot.orquestrador: Mensagem abc já processada; ignorando.
+ok
+test_analista_ve_fila_e_historico (apps.painel.tests.PainelTest.test_analista_ve_fila_e_historico) ... ok
+test_atender_responder_e_resolver (apps.painel.tests.PainelTest.test_atender_responder_e_resolver) ... ok
+test_exige_login (apps.painel.tests.PainelTest.test_exige_login) ... ok
+test_usuario_sem_perfil_nao_acessa (apps.painel.tests.PainelTest.test_usuario_sem_perfil_nao_acessa) ... ok
+test_clique_duplo_nao_duplica (apps.portal.tests.PortalTest.test_clique_duplo_nao_duplica) ... 2026-11-23 16:06:09,605 INFO apps.bot.orquestrador: Mensagem mesmo-id-123 já processada; ignorando.
+ok
+test_colaborador_nao_ve_conversa_de_outro (apps.portal.tests.PortalTest.test_colaborador_nao_ve_conversa_de_outro) ... ok
+test_fluxo_completo_ate_o_protocolo (apps.portal.tests.PortalTest.test_fluxo_completo_ate_o_protocolo) ... ok
+test_limite_de_mensagens (apps.portal.tests.PortalTest.test_limite_de_mensagens) ... ok
+test_pagina_abre (apps.portal.tests.PortalTest.test_pagina_abre) ... ok
+test_resposta_do_analista_aparece_no_chat (apps.portal.tests.PortalTest.test_resposta_do_analista_aparece_no_chat) ... ok
+test_validacao_de_entrada (apps.portal.tests.PortalTest.test_validacao_de_entrada) ... ok
+test_seguranca_escala_na_hora_com_prioridade_critica (apps.bot.tests.test_engine.Critico.test_seguranca_escala_na_hora_com_prioridade_critica) ... ok
+test_texto_livre_de_phishing_escala (apps.bot.tests.test_engine.Critico.test_texto_livre_de_phishing_escala) ... ok
+test_mantem_frases_normais (apps.bot.tests.test_engine.DadosSensiveis.test_mantem_frases_normais) ... ok
+test_remove_senha_codigo_e_cpf (apps.bot.tests.test_engine.DadosSensiveis.test_remove_senha_codigo_e_cpf) ... ok
+test_colaborador_conhecido_vai_direto_ao_menu (apps.bot.tests.test_engine.Identificacao.test_colaborador_conhecido_vai_direto_ao_menu) ... ok
+test_email_de_outro_dominio_e_recusado (apps.bot.tests.test_engine.Identificacao.test_email_de_outro_dominio_e_recusado) ... ok
+test_identificacao_configuravel_com_matricula (apps.bot.tests.test_engine.Identificacao.test_identificacao_configuravel_com_matricula) ... ok
+test_nome_invalido (apps.bot.tests.test_engine.Identificacao.test_nome_invalido) ... ok
+test_pede_nome_setor_email_e_mostra_menu (apps.bot.tests.test_engine.Identificacao.test_pede_nome_setor_email_e_mostra_menu) ... ok
+test_categoria_sem_orientacao_vai_direto_para_chamado (apps.bot.tests.test_engine.NaoResolvido.test_categoria_sem_orientacao_vai_direto_para_chamado) ... ok
+test_com_chamado_aberto_bot_fica_em_silencio (apps.bot.tests.test_engine.NaoResolvido.test_com_chamado_aberto_bot_fica_em_silencio) ... ok
+test_fora_do_horario_informa_janela_configurada (apps.bot.tests.test_engine.NaoResolvido.test_fora_do_horario_informa_janela_configurada) ... ok
+test_nao_por_texto (apps.bot.tests.test_engine.NaoResolvido.test_nao_por_texto) ... ok
+test_pede_descricao_e_abre_chamado_com_resumo (apps.bot.tests.test_engine.NaoResolvido.test_pede_descricao_e_abre_chamado_com_resumo) ... ok
+test_solicitacao_de_acesso_sempre_abre_chamado (apps.bot.tests.test_engine.NaoResolvido.test_solicitacao_de_acesso_sempre_abre_chamado) ... ok
+test_comandos_globais (apps.bot.tests.test_engine.Navegacao.test_comandos_globais) ... ok
+test_nao_muta_estado_de_entrada (apps.bot.tests.test_engine.Navegacao.test_nao_muta_estado_de_entrada) ... ok
+test_tres_opcoes_invalidas_oferece_chamado (apps.bot.tests.test_engine.Navegacao.test_tres_opcoes_invalidas_oferece_chamado) ... ok
+test_ver_outra_orientacao (apps.bot.tests.test_engine.Navegacao.test_ver_outra_orientacao) ... ok
+test_resolve_avalia_e_encerra (apps.bot.tests.test_engine.Resolvido.test_resolve_avalia_e_encerra) ... ok
+test_sim_por_texto (apps.bot.tests.test_engine.Resolvido.test_sim_por_texto) ... ok
+test_descricao_clara_vai_direto_para_a_orientacao (apps.bot.tests.test_engine.TextoLivre.test_descricao_clara_vai_direto_para_a_orientacao) ... ok
+test_erro_de_acesso_sugere_orientacoes (apps.bot.tests.test_engine.TextoLivre.test_erro_de_acesso_sugere_orientacoes) ... ok
+test_relato_vira_descricao_sem_repetir (apps.bot.tests.test_engine.TextoLivre.test_relato_vira_descricao_sem_repetir) ... ok
+test_sem_resultado_conta_como_tentativa (apps.bot.tests.test_engine.TextoLivre.test_sem_resultado_conta_como_tentativa) ... ok
+test_fechamento_de_ticket (apps.bot.tests.test_webhook.InterpretarWebhook.test_fechamento_de_ticket) ... ok
+test_lista_de_mensagens (apps.bot.tests.test_webhook.InterpretarWebhook.test_lista_de_mensagens) ... ok
+test_mensagem_do_atendente_ou_bot (apps.bot.tests.test_webhook.InterpretarWebhook.test_mensagem_do_atendente_ou_bot) ... ok
+test_mensagem_do_colaborador (apps.bot.tests.test_webhook.InterpretarWebhook.test_mensagem_do_colaborador) ... ok
+test_outros_eventos_e_lixo (apps.bot.tests.test_webhook.InterpretarWebhook.test_outros_eventos_e_lixo) ... ok
+
+----------------------------------------------------------------------
+Ran 55 tests in 13.412s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+ OK
+System check identified no issues (0 silenced).

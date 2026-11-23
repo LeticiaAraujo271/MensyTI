@@ -1,0 +1,132 @@
+{% extends "painel/base.html" %}
+{% block titulo %}{{ chamado.protocolo }} · Painel de TI{% endblock %}
+{% block conteudo %}
+<p><a href="{% url 'painel:fila' %}">← Voltar à fila</a></p>
+<div class="titulo-linha">
+  <h1>{{ chamado.protocolo }}</h1>
+  <span class="selo p{{ chamado.prioridade }}">{{ chamado.get_prioridade_display }}</span>
+  <span class="status {{ chamado.status }}" id="status-atual">{{ chamado.get_status_display }}</span>
+</div>
+
+<div class="grade">
+  <section class="cartao">
+    <h2>Dados do chamado</h2>
+    <dl class="dados">
+      <dt>Colaborador</dt><dd>{{ chamado.nome_colaborador|default:"—" }}</dd>
+      <dt>Setor</dt><dd>{{ chamado.setor|default:"—" }}</dd>
+      <dt>Contato</dt><dd>{{ chamado.contato|default:"—" }}</dd>
+      <dt>Canal</dt><dd>{{ chamado.canal|default:"—" }}</dd>
+      <dt>Assunto</dt><dd>{{ chamado.categoria|default:"—" }}</dd>
+      <dt>Orientação vista</dt><dd>{{ chamado.orientacao|default:"—" }}</dd>
+      <dt>Motivo</dt><dd>{{ chamado.motivo|default:"—" }}</dd>
+      <dt>Aberto em</dt><dd>{{ chamado.criado_em|date:"d/m/Y H:i" }}{% if chamado.fora_do_horario %} · 🕒 fora do horário{% endif %}</dd>
+      <dt>Responsável</dt><dd>{{ chamado.responsavel.get_username|default:"ninguém ainda" }}</dd>
+      {% if chamado.protocolo_externo %}<dt>Sistema externo</dt><dd>{{ chamado.protocolo_externo }}</dd>{% endif %}
+    </dl>
+    <h3>Descrição</h3>
+    <p class="pre">{{ chamado.descricao|default:"—" }}</p>
+    {% if chamado.solucao %}<h3>Solução</h3><p class="pre">{{ chamado.solucao }}</p>{% endif %}
+
+    <h2>Ações</h2>
+    <div class="acoes">
+      {% if chamado.aberto and chamado.responsavel_id != user.id %}
+      <form method="post" action="{% url 'painel:acao' chamado.protocolo %}">{% csrf_token %}
+        <input type="hidden" name="acao" value="assumir"><button type="submit" class="primario">Assumir chamado</button>
+      </form>
+      {% endif %}
+      {% if chamado.status == S.EM_FILA or chamado.status == S.AGUARDANDO_USUARIO %}
+      <form method="post" action="{% url 'painel:acao' chamado.protocolo %}">{% csrf_token %}
+        <input type="hidden" name="acao" value="status"><input type="hidden" name="status" value="em_atendimento">
+        <button type="submit">Marcar em atendimento</button>
+      </form>
+      {% endif %}
+      {% if chamado.status == S.EM_ATENDIMENTO %}
+      <form method="post" action="{% url 'painel:acao' chamado.protocolo %}">{% csrf_token %}
+        <input type="hidden" name="acao" value="status"><input type="hidden" name="status" value="em_fila">
+        <button type="submit">Devolver para a fila</button>
+      </form>
+      {% endif %}
+      {% if chamado.status == S.RESOLVIDO %}
+      <form method="post" action="{% url 'painel:acao' chamado.protocolo %}">{% csrf_token %}
+        <input type="hidden" name="acao" value="fechar"><button type="submit">Fechar chamado</button>
+      </form>
+      {% endif %}
+      {% if not chamado.aberto %}
+      <form method="post" action="{% url 'painel:acao' chamado.protocolo %}" class="linha">{% csrf_token %}
+        <input type="hidden" name="acao" value="reabrir">
+        <input type="text" name="nota" placeholder="Motivo da reabertura" required>
+        <button type="submit">Reabrir</button>
+      </form>
+      {% endif %}
+    </div>
+
+    {% if chamado.aberto %}
+    <form method="post" action="{% url 'painel:acao' chamado.protocolo %}" class="bloco">{% csrf_token %}
+      <input type="hidden" name="acao" value="resolver">
+      <label>Registrar solução e resolver
+        <textarea name="solucao" rows="3" required placeholder="O que foi feito para resolver? (o colaborador recebe este texto)"></textarea>
+      </label>
+      <button type="submit" class="sucesso">Resolver chamado</button>
+    </form>
+    {% endif %}
+  </section>
+
+  <section class="cartao">
+    <h2>Conversa com o colaborador</h2>
+    <div class="conversa" id="conversa" data-url="{% url 'painel:mensagens' chamado.protocolo %}" data-ultimo="{{ ultimo_id }}">
+      {% for m in mensagens %}
+        <div class="msg {{ m.autor }}"><span class="quem">{% if m.analista %}{{ m.analista.get_full_name|default:m.analista.get_username }} (TI){% else %}{{ m.get_autor_display }}{% endif %} · {{ m.criada_em|date:"d/m H:i" }}</span>{{ m.texto|linebreaksbr }}</div>
+      {% empty %}
+        <p class="vazio">Sem mensagens.</p>
+      {% endfor %}
+    </div>
+    {% if pode_responder %}
+    <form method="post" action="{% url 'painel:acao' chamado.protocolo %}" class="bloco">{% csrf_token %}
+      <input type="hidden" name="acao" value="responder">
+      <label>Responder ao colaborador
+        <textarea name="texto" rows="3" required placeholder="A mensagem aparece no chat do colaborador"></textarea>
+      </label>
+      <label class="check"><input type="checkbox" name="aguardar" value="1"> Aguardar resposta do colaborador</label>
+      <button type="submit" class="primario">Enviar resposta</button>
+    </form>
+    {% endif %}
+
+    <h2>Histórico do chamado</h2>
+    <ol class="eventos">
+      {% for e in eventos %}
+        <li><small>{{ e.criado_em|date:"d/m H:i" }} · {{ e.autor.get_username|default:"sistema" }}</small><br><b>{{ e.get_tipo_display }}</b>: {{ e.descricao }}</li>
+      {% endfor %}
+    </ol>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  // Mostra novas mensagens do colaborador sem recarregar a página.
+  const caixa = document.getElementById("conversa");
+  const status = document.getElementById("status-atual");
+  let ultimo = parseInt(caixa.dataset.ultimo || "0", 10);
+  function esc(t) { const d = document.createElement("div"); d.textContent = t; return d.innerHTML.replace(/\n/g, "<br>"); }
+  caixa.scrollTop = caixa.scrollHeight;
+  setInterval(async function () {
+    if (document.hidden) return;
+    try {
+      const r = await fetch(caixa.dataset.url + "?depois=" + ultimo, { credentials: "same-origin" });
+      if (!r.ok) return;
+      const d = await r.json();
+      status.textContent = d.status;
+      d.mensagens.forEach(function (m) {
+        const div = document.createElement("div");
+        div.className = "msg " + m.autor;
+        div.innerHTML = '<span class="quem">' + esc(m.analista ? m.analista + " (TI)" : m.autor_nome) + " · " + m.hora + "</span>" + esc(m.texto);
+        caixa.appendChild(div);
+        ultimo = m.id;
+      });
+      if (d.mensagens.length) caixa.scrollTop = caixa.scrollHeight;
+    } catch (e) {}
+  }, 5000);
+})();
+</script>
+{% endblock %}

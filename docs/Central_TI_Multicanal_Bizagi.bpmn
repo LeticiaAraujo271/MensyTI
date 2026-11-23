@@ -1,0 +1,251 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_CentralTI" targetNamespace="https://mensori.example/processos/central-ti" name="Central de Atendimento TI - Multicanal">
+  <process id="Process_CentralTI" name="Atendimento de TI - Web e WhatsApp" isExecutable="false">
+    <laneSet id="LaneSet_TI">
+      <lane id="Lane_Colaborador" name="Colaborador">
+        <flowNodeRef>Start</flowNodeRef>
+        <flowNodeRef>Access</flowNodeRef>
+        <flowNodeRef>Identify</flowNodeRef>
+        <flowNodeRef>Describe</flowNodeRef>
+        <flowNodeRef>Evaluate</flowNodeRef>
+      </lane>
+      <lane id="Lane_Plataforma" name="Chatbot / Plataforma de TI">
+        <flowNodeRef>Available</flowNodeRef>
+        <flowNodeRef>Fallback</flowNodeRef>
+        <flowNodeRef>Validate</flowNodeRef>
+        <flowNodeRef>Menu</flowNodeRef>
+        <flowNodeRef>Critical</flowNodeRef>
+        <flowNodeRef>Guide</flowNodeRef>
+        <flowNodeRef>Resolved</flowNodeRef>
+        <flowNodeRef>CloseAuto</flowNodeRef>
+        <flowNodeRef>EndAuto</flowNodeRef>
+        <flowNodeRef>Ticket</flowNodeRef>
+        <flowNodeRef>Hours</flowNodeRef>
+        <flowNodeRef>Queue</flowNodeRef>
+        <flowNodeRef>Assign</flowNodeRef>
+        <flowNodeRef>CloseHuman</flowNodeRef>
+        <flowNodeRef>EndHuman</flowNodeRef>
+        <flowNodeRef>EndPending</flowNodeRef>
+      </lane>
+      <lane id="Lane_Analista" name="Analista de TI">
+        <flowNodeRef>Handle</flowNodeRef>
+      </lane>
+    </laneSet>
+    <startEvent id="Start" name="Início: necessidade de suporte"/>
+    <userTask id="Access" name="Acessar portal por link ou WhatsApp"/>
+    <exclusiveGateway id="Available" name="Canal disponível?"/>
+    <serviceTask id="Fallback" name="Disponibilizar link e orientar troca de canal"/>
+    <userTask id="Identify" name="Informar identificação e setor"/>
+    <serviceTask id="Validate" name="Validar dados e abrir sessão"/>
+    <serviceTask id="Menu" name="Apresentar categorias de TI"/>
+    <userTask id="Describe" name="Selecionar assunto e descrever problema"/>
+    <exclusiveGateway id="Critical" name="Incidente crítico ou segurança?"/>
+    <serviceTask id="Guide" name="Consultar base e orientar passo a passo"/>
+    <exclusiveGateway id="Resolved" name="Foi resolvido?"/>
+    <userTask id="Evaluate" name="Avaliar atendimento (1 a 5)"/>
+    <serviceTask id="CloseAuto" name="Registrar solução e encerrar"/>
+    <endEvent id="EndAuto" name="Fim: resolvido"/>
+    <serviceTask id="Ticket" name="Criar chamado com protocolo e resumo"/>
+    <exclusiveGateway id="Hours" name="Dentro do horário de suporte?"/>
+    <serviceTask id="Queue" name="Colocar na fila e informar próximo horário"/>
+    <serviceTask id="Assign" name="Encaminhar chamado ao analista"/>
+    <userTask id="Handle" name="Analisar e atender colaborador"/>
+    <serviceTask id="CloseHuman" name="Registrar solução e encerrar chamado"/>
+    <endEvent id="EndHuman" name="Fim: atendimento humano"/>
+    <endEvent id="EndPending" name="Fim: chamado aguardando TI"/>
+    <sequenceFlow id="Flow_1" sourceRef="Start" targetRef="Access"/>
+    <sequenceFlow id="Flow_2" sourceRef="Access" targetRef="Available"/>
+    <sequenceFlow id="Flow_3" sourceRef="Available" targetRef="Identify" name="Sim"/>
+    <sequenceFlow id="Flow_4" sourceRef="Available" targetRef="Fallback" name="Não"/>
+    <sequenceFlow id="Flow_5" sourceRef="Fallback" targetRef="Identify"/>
+    <sequenceFlow id="Flow_6" sourceRef="Identify" targetRef="Validate"/>
+    <sequenceFlow id="Flow_7" sourceRef="Validate" targetRef="Menu"/>
+    <sequenceFlow id="Flow_8" sourceRef="Menu" targetRef="Describe"/>
+    <sequenceFlow id="Flow_9" sourceRef="Describe" targetRef="Critical"/>
+    <sequenceFlow id="Flow_10" sourceRef="Critical" targetRef="Ticket" name="Sim"/>
+    <sequenceFlow id="Flow_11" sourceRef="Critical" targetRef="Guide" name="Não"/>
+    <sequenceFlow id="Flow_12" sourceRef="Guide" targetRef="Resolved"/>
+    <sequenceFlow id="Flow_13" sourceRef="Resolved" targetRef="Evaluate" name="Sim"/>
+    <sequenceFlow id="Flow_14" sourceRef="Resolved" targetRef="Ticket" name="Não"/>
+    <sequenceFlow id="Flow_15" sourceRef="Evaluate" targetRef="CloseAuto"/>
+    <sequenceFlow id="Flow_16" sourceRef="CloseAuto" targetRef="EndAuto"/>
+    <sequenceFlow id="Flow_17" sourceRef="Ticket" targetRef="Hours"/>
+    <sequenceFlow id="Flow_18" sourceRef="Hours" targetRef="Assign" name="Sim"/>
+    <sequenceFlow id="Flow_19" sourceRef="Hours" targetRef="Queue" name="Não"/>
+    <sequenceFlow id="Flow_20" sourceRef="Queue" targetRef="EndPending"/>
+    <sequenceFlow id="Flow_21" sourceRef="Assign" targetRef="Handle"/>
+    <sequenceFlow id="Flow_22" sourceRef="Handle" targetRef="CloseHuman"/>
+    <sequenceFlow id="Flow_23" sourceRef="CloseHuman" targetRef="EndHuman"/>
+  </process>
+  <bpmndi:BPMNDiagram id="Diagram_TI">
+    <bpmndi:BPMNPlane id="Plane_TI" bpmnElement="Process_CentralTI">
+      <bpmndi:BPMNShape id="Shape_Lane_Colaborador" bpmnElement="Lane_Colaborador" isHorizontal="true">
+        <dc:Bounds x="0" y="35" width="2700" height="170"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_Plataforma" bpmnElement="Lane_Plataforma" isHorizontal="true">
+        <dc:Bounds x="0" y="205" width="2700" height="170"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_Analista" bpmnElement="Lane_Analista" isHorizontal="true">
+        <dc:Bounds x="0" y="375" width="2700" height="170"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Start" bpmnElement="Start">
+        <dc:Bounds x="35" y="85" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Access" bpmnElement="Access">
+        <dc:Bounds x="195" y="85" width="145" height="76"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Available" bpmnElement="Available">
+        <dc:Bounds x="385" y="255" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Fallback" bpmnElement="Fallback">
+        <dc:Bounds x="530" y="255" width="145" height="76"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Identify" bpmnElement="Identify">
+        <dc:Bounds x="685" y="85" width="145" height="76"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Validate" bpmnElement="Validate">
+        <dc:Bounds x="870" y="255" width="145" height="76"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Menu" bpmnElement="Menu">
+        <dc:Bounds x="1045" y="255" width="145" height="76"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Describe" bpmnElement="Describe">
+        <dc:Bounds x="1235" y="85" width="145" height="76"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Critical" bpmnElement="Critical">
+        <dc:Bounds x="1430" y="255" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Guide" bpmnElement="Guide">
+        <dc:Bounds x="1605" y="255" width="145" height="76"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Resolved" bpmnElement="Resolved">
+        <dc:Bounds x="1795" y="255" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Evaluate" bpmnElement="Evaluate">
+        <dc:Bounds x="1985" y="85" width="145" height="76"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_CloseAuto" bpmnElement="CloseAuto">
+        <dc:Bounds x="2175" y="255" width="145" height="76"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndAuto" bpmnElement="EndAuto">
+        <dc:Bounds x="2355" y="255" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Ticket" bpmnElement="Ticket">
+        <dc:Bounds x="1605" y="425" width="145" height="76"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Hours" bpmnElement="Hours">
+        <dc:Bounds x="1820" y="425" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Queue" bpmnElement="Queue">
+        <dc:Bounds x="2000" y="425" width="145" height="76"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Assign" bpmnElement="Assign">
+        <dc:Bounds x="2000" y="255" width="145" height="76"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Handle" bpmnElement="Handle">
+        <dc:Bounds x="2195" y="425" width="145" height="76"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_CloseHuman" bpmnElement="CloseHuman">
+        <dc:Bounds x="2385" y="425" width="145" height="76"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndHuman" bpmnElement="EndHuman">
+        <dc:Bounds x="2575" y="425" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndPending" bpmnElement="EndPending">
+        <dc:Bounds x="2195" y="595" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_Flow_1" bpmnElement="Flow_1">
+        <di:waypoint x="71" y="103.0"/>
+        <di:waypoint x="195" y="123.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_2" bpmnElement="Flow_2">
+        <di:waypoint x="340" y="123.0"/>
+        <di:waypoint x="385" y="273.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_3" bpmnElement="Flow_3">
+        <di:waypoint x="421" y="273.0"/>
+        <di:waypoint x="685" y="123.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_4" bpmnElement="Flow_4">
+        <di:waypoint x="421" y="273.0"/>
+        <di:waypoint x="530" y="293.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_5" bpmnElement="Flow_5">
+        <di:waypoint x="675" y="293.0"/>
+        <di:waypoint x="685" y="123.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_6" bpmnElement="Flow_6">
+        <di:waypoint x="830" y="123.0"/>
+        <di:waypoint x="870" y="293.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_7" bpmnElement="Flow_7">
+        <di:waypoint x="1015" y="293.0"/>
+        <di:waypoint x="1045" y="293.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_8" bpmnElement="Flow_8">
+        <di:waypoint x="1190" y="293.0"/>
+        <di:waypoint x="1235" y="123.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_9" bpmnElement="Flow_9">
+        <di:waypoint x="1380" y="123.0"/>
+        <di:waypoint x="1430" y="273.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_10" bpmnElement="Flow_10">
+        <di:waypoint x="1466" y="273.0"/>
+        <di:waypoint x="1605" y="463.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_11" bpmnElement="Flow_11">
+        <di:waypoint x="1466" y="273.0"/>
+        <di:waypoint x="1605" y="293.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_12" bpmnElement="Flow_12">
+        <di:waypoint x="1750" y="293.0"/>
+        <di:waypoint x="1795" y="273.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_13" bpmnElement="Flow_13">
+        <di:waypoint x="1831" y="273.0"/>
+        <di:waypoint x="1985" y="123.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_14" bpmnElement="Flow_14">
+        <di:waypoint x="1813.0" y="291"/>
+        <di:waypoint x="1677.5" y="425"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_15" bpmnElement="Flow_15">
+        <di:waypoint x="2130" y="123.0"/>
+        <di:waypoint x="2175" y="293.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_16" bpmnElement="Flow_16">
+        <di:waypoint x="2320" y="293.0"/>
+        <di:waypoint x="2355" y="273.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_17" bpmnElement="Flow_17">
+        <di:waypoint x="1750" y="463.0"/>
+        <di:waypoint x="1820" y="443.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_18" bpmnElement="Flow_18">
+        <di:waypoint x="1856" y="443.0"/>
+        <di:waypoint x="2000" y="293.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_19" bpmnElement="Flow_19">
+        <di:waypoint x="1856" y="443.0"/>
+        <di:waypoint x="2000" y="463.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_20" bpmnElement="Flow_20">
+        <di:waypoint x="2145" y="463.0"/>
+        <di:waypoint x="2195" y="613.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_21" bpmnElement="Flow_21">
+        <di:waypoint x="2145" y="293.0"/>
+        <di:waypoint x="2195" y="463.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_22" bpmnElement="Flow_22">
+        <di:waypoint x="2340" y="463.0"/>
+        <di:waypoint x="2385" y="463.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_23" bpmnElement="Flow_23">
+        <di:waypoint x="2530" y="463.0"/>
+        <di:waypoint x="2575" y="443.0"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

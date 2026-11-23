@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  id="Definitions_ChatbotTI"
+                  targetNamespace="http://bpmn.io/schema/bpmn"
+                  exporter="Chatbot TI" exporterVersion="1.0">
+  <bpmn:collaboration id="Collaboration_1">
+    <bpmn:participant id="Pool_1" name="Atendimento de TI via chatbot Digisac" processRef="Processo_ChatbotTI" />
+  </bpmn:collaboration>
+  <bpmn:process id="Processo_ChatbotTI" name="Atendimento de TI via chatbot Digisac" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="lane_colab" name="Colaborador">
+        <bpmn:flowNodeRef>ini</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_informar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_escolher</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_seguir</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_avaliar</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="lane_bot" name="Chatbot de TI (Digisac + Django)">
+        <bpmn:flowNodeRef>gw_ident</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_pedir</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_menu</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_orientar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>gw_critico</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>gw_resolveu</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_reg_aval</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>fim_auto</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_reg_solic</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>gw_horario</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_transferir</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_fora</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>fim_fora</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="lane_analista" name="Analista de TI">
+        <bpmn:flowNodeRef>t_atender</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_encerrar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>fim_analista</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="ini" name="Colaborador envia mensagem no WhatsApp">
+      <bpmn:documentation>Mensagem recebida pelo Digisac e enviada ao Django pelo webhook message.created.</bpmn:documentation>
+      <bpmn:outgoing>f1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:exclusiveGateway id="gw_ident" name="Colaborador já identificado?">
+      <bpmn:incoming>f1</bpmn:incoming>
+      <bpmn:outgoing>f2</bpmn:outgoing>
+      <bpmn:outgoing>f3</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="t_pedir" name="Solicitar nome e setor">
+      <bpmn:documentation>Somente no primeiro contato. Os dados ficam salvos na conversa.</bpmn:documentation>
+      <bpmn:incoming>f3</bpmn:incoming>
+      <bpmn:outgoing>f4</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="t_informar" name="Informar nome e setor">
+      <bpmn:incoming>f4</bpmn:incoming>
+      <bpmn:outgoing>f5</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="t_menu" name="Apresentar menu de assuntos">
+      <bpmn:documentation>Menu montado a partir das categorias ativas no Django Admin. Opção 0 = falar com analista.</bpmn:documentation>
+      <bpmn:incoming>f2</bpmn:incoming>
+      <bpmn:incoming>f5</bpmn:incoming>
+      <bpmn:outgoing>f6</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="t_escolher" name="Escolher assunto e situação">
+      <bpmn:incoming>f6</bpmn:incoming>
+      <bpmn:incoming>f14</bpmn:incoming>
+      <bpmn:outgoing>f7</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="t_orientar" name="Enviar orientação passo a passo">
+      <bpmn:documentation>Registra a métrica 'orientação vista'.</bpmn:documentation>
+      <bpmn:incoming>f7</bpmn:incoming>
+      <bpmn:outgoing>f8</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="gw_critico" name="Caso crítico de segurança?">
+      <bpmn:documentation>Ex.: e-mail suspeito (phishing), perda do autenticador (MFA).</bpmn:documentation>
+      <bpmn:incoming>f8</bpmn:incoming>
+      <bpmn:outgoing>f9</bpmn:outgoing>
+      <bpmn:outgoing>f10</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="t_seguir" name="Seguir a orientação e responder se resolveu">
+      <bpmn:incoming>f9</bpmn:incoming>
+      <bpmn:outgoing>f11</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="gw_resolveu" name="Resolveu?">
+      <bpmn:incoming>f11</bpmn:incoming>
+      <bpmn:outgoing>f12</bpmn:outgoing>
+      <bpmn:outgoing>f13</bpmn:outgoing>
+      <bpmn:outgoing>f14</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="t_avaliar" name="Avaliar o atendimento (1 a 5)">
+      <bpmn:incoming>f12</bpmn:incoming>
+      <bpmn:outgoing>f15</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="t_reg_aval" name="Registrar avaliação e encerrar atendimento">
+      <bpmn:incoming>f15</bpmn:incoming>
+      <bpmn:outgoing>f16</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="fim_auto" name="Resolvido no autoatendimento">
+      <bpmn:incoming>f16</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:task id="t_reg_solic" name="Registrar solicitação com resumo da conversa">
+      <bpmn:documentation>Hoje grava no Django; no futuro abre o chamado no sistema de chamados.</bpmn:documentation>
+      <bpmn:incoming>f10</bpmn:incoming>
+      <bpmn:incoming>f13</bpmn:incoming>
+      <bpmn:outgoing>f17</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="gw_horario" name="Dentro do horário de atendimento?">
+      <bpmn:incoming>f17</bpmn:incoming>
+      <bpmn:outgoing>f18</bpmn:outgoing>
+      <bpmn:outgoing>f19</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="t_transferir" name="Transferir para o departamento de TI no Digisac">
+      <bpmn:documentation>O resumo vai como comentário da transferência. O bot fica em silêncio.</bpmn:documentation>
+      <bpmn:incoming>f18</bpmn:incoming>
+      <bpmn:outgoing>f21</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="t_fora" name="Informar horário da TI e encerrar">
+      <bpmn:incoming>f19</bpmn:incoming>
+      <bpmn:outgoing>f20</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="fim_fora" name="Solicitação registrada para o próximo horário útil">
+      <bpmn:incoming>f20</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:task id="t_atender" name="Atender o colaborador">
+      <bpmn:incoming>f21</bpmn:incoming>
+      <bpmn:outgoing>f22</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="t_encerrar" name="Encerrar atendimento no Digisac">
+      <bpmn:documentation>Ao encerrar, o bot volta a responder esse colaborador.</bpmn:documentation>
+      <bpmn:incoming>f22</bpmn:incoming>
+      <bpmn:outgoing>f23</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="fim_analista" name="Atendimento concluído pelo analista">
+      <bpmn:incoming>f23</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="f1" sourceRef="ini" targetRef="gw_ident" />
+    <bpmn:sequenceFlow id="f2" name="Sim" sourceRef="gw_ident" targetRef="t_menu" />
+    <bpmn:sequenceFlow id="f3" name="Não" sourceRef="gw_ident" targetRef="t_pedir" />
+    <bpmn:sequenceFlow id="f4" sourceRef="t_pedir" targetRef="t_informar" />
+    <bpmn:sequenceFlow id="f5" sourceRef="t_informar" targetRef="t_menu" />
+    <bpmn:sequenceFlow id="f6" sourceRef="t_menu" targetRef="t_escolher" />
+    <bpmn:sequenceFlow id="f7" sourceRef="t_escolher" targetRef="t_orientar" />
+    <bpmn:sequenceFlow id="f8" sourceRef="t_orientar" targetRef="gw_critico" />
+    <bpmn:sequenceFlow id="f9" name="Não" sourceRef="gw_critico" targetRef="t_seguir" />
+    <bpmn:sequenceFlow id="f10" name="Sim" sourceRef="gw_critico" targetRef="t_reg_solic" />
+    <bpmn:sequenceFlow id="f11" sourceRef="t_seguir" targetRef="gw_resolveu" />
+    <bpmn:sequenceFlow id="f12" name="Sim" sourceRef="gw_resolveu" targetRef="t_avaliar" />
+    <bpmn:sequenceFlow id="f13" name="Não" sourceRef="gw_resolveu" targetRef="t_reg_solic" />
+    <bpmn:sequenceFlow id="f14" name="Ver outra orientação" sourceRef="gw_resolveu" targetRef="t_escolher" />
+    <bpmn:sequenceFlow id="f15" sourceRef="t_avaliar" targetRef="t_reg_aval" />
+    <bpmn:sequenceFlow id="f16" sourceRef="t_reg_aval" targetRef="fim_auto" />
+    <bpmn:sequenceFlow id="f17" sourceRef="t_reg_solic" targetRef="gw_horario" />
+    <bpmn:sequenceFlow id="f18" name="Sim" sourceRef="gw_horario" targetRef="t_transferir" />
+    <bpmn:sequenceFlow id="f19" name="Não" sourceRef="gw_horario" targetRef="t_fora" />
+    <bpmn:sequenceFlow id="f20" sourceRef="t_fora" targetRef="fim_fora" />
+    <bpmn:sequenceFlow id="f21" sourceRef="t_transferir" targetRef="t_atender" />
+    <bpmn:sequenceFlow id="f22" sourceRef="t_atender" targetRef="t_encerrar" />
+    <bpmn:sequenceFlow id="f23" sourceRef="t_encerrar" targetRef="fim_analista" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_1">
+    <bpmndi:BPMNPlane id="Plane_1" bpmnElement="Collaboration_1">
+      <bpmndi:BPMNShape id="Pool_di" bpmnElement="Pool_1" isHorizontal="true">
+        <dc:Bounds x="0" y="0" width="2550" height="650" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lane_colab_di" bpmnElement="lane_colab" isHorizontal="true">
+        <dc:Bounds x="30" y="0" width="2520" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lane_bot_di" bpmnElement="lane_bot" isHorizontal="true">
+        <dc:Bounds x="30" y="200" width="2520" height="270" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lane_analista_di" bpmnElement="lane_analista" isHorizontal="true">
+        <dc:Bounds x="30" y="470" width="2520" height="180" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ini_di" bpmnElement="ini">
+        <dc:Bounds x="102" y="82" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="60" y="122" width="120" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw_ident_di" bpmnElement="gw_ident" isMarkerVisible="true">
+        <dc:Bounds x="255" y="245" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="220" y="299" width="120" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_pedir_di" bpmnElement="t_pedir">
+        <dc:Bounds x="375" y="235" width="130" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_informar_di" bpmnElement="t_informar">
+        <dc:Bounds x="535" y="65" width="130" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_menu_di" bpmnElement="t_menu">
+        <dc:Bounds x="695" y="235" width="130" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_escolher_di" bpmnElement="t_escolher">
+        <dc:Bounds x="855" y="65" width="130" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_orientar_di" bpmnElement="t_orientar">
+        <dc:Bounds x="1015" y="235" width="130" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw_critico_di" bpmnElement="gw_critico" isMarkerVisible="true">
+        <dc:Bounds x="1215" y="245" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1180" y="299" width="120" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_seguir_di" bpmnElement="t_seguir">
+        <dc:Bounds x="1335" y="65" width="130" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw_resolveu_di" bpmnElement="gw_resolveu" isMarkerVisible="true">
+        <dc:Bounds x="1535" y="245" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1500" y="299" width="120" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_avaliar_di" bpmnElement="t_avaliar">
+        <dc:Bounds x="1655" y="65" width="130" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_reg_aval_di" bpmnElement="t_reg_aval">
+        <dc:Bounds x="1815" y="235" width="130" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fim_auto_di" bpmnElement="fim_auto">
+        <dc:Bounds x="2022" y="252" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1980" y="292" width="120" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_reg_solic_di" bpmnElement="t_reg_solic">
+        <dc:Bounds x="1655" y="365" width="130" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw_horario_di" bpmnElement="gw_horario" isMarkerVisible="true">
+        <dc:Bounds x="1855" y="375" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1820" y="429" width="120" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_transferir_di" bpmnElement="t_transferir">
+        <dc:Bounds x="1975" y="365" width="130" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_fora_di" bpmnElement="t_fora">
+        <dc:Bounds x="2135" y="235" width="130" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fim_fora_di" bpmnElement="fim_fora">
+        <dc:Bounds x="2342" y="252" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2300" y="292" width="120" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_atender_di" bpmnElement="t_atender">
+        <dc:Bounds x="1975" y="525" width="130" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_encerrar_di" bpmnElement="t_encerrar">
+        <dc:Bounds x="2135" y="525" width="130" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fim_analista_di" bpmnElement="fim_analista">
+        <dc:Bounds x="2342" y="542" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2300" y="582" width="120" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1">
+        <di:waypoint x="138" y="100" />
+        <di:waypoint x="280" y="100" />
+        <di:waypoint x="280" y="245" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2">
+        <di:waypoint x="280" y="245" />
+        <di:waypoint x="280" y="222" />
+        <di:waypoint x="735" y="222" />
+        <di:waypoint x="735" y="235" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="284" y="216" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3">
+        <di:waypoint x="305" y="270" />
+        <di:waypoint x="375" y="270" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="344" y="252" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4">
+        <di:waypoint x="505" y="270" />
+        <di:waypoint x="600" y="270" />
+        <di:waypoint x="600" y="135" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5">
+        <di:waypoint x="665" y="100" />
+        <di:waypoint x="760" y="100" />
+        <di:waypoint x="760" y="235" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6">
+        <di:waypoint x="825" y="270" />
+        <di:waypoint x="920" y="270" />
+        <di:waypoint x="920" y="135" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f7_di" bpmnElement="f7">
+        <di:waypoint x="985" y="100" />
+        <di:waypoint x="1080" y="100" />
+        <di:waypoint x="1080" y="235" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f8_di" bpmnElement="f8">
+        <di:waypoint x="1145" y="270" />
+        <di:waypoint x="1215" y="270" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f9_di" bpmnElement="f9">
+        <di:waypoint x="1265" y="270" />
+        <di:waypoint x="1375" y="270" />
+        <di:waypoint x="1375" y="135" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1324" y="252" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f10_di" bpmnElement="f10">
+        <di:waypoint x="1240" y="295" />
+        <di:waypoint x="1240" y="455" />
+        <di:waypoint x="1720" y="455" />
+        <di:waypoint x="1720" y="435" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1244" y="357" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f11_di" bpmnElement="f11">
+        <di:waypoint x="1425" y="135" />
+        <di:waypoint x="1425" y="270" />
+        <di:waypoint x="1535" y="270" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f12_di" bpmnElement="f12">
+        <di:waypoint x="1585" y="270" />
+        <di:waypoint x="1720" y="270" />
+        <di:waypoint x="1720" y="135" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1656" y="252" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f13_di" bpmnElement="f13">
+        <di:waypoint x="1560" y="295" />
+        <di:waypoint x="1560" y="400" />
+        <di:waypoint x="1655" y="400" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1564" y="330" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f14_di" bpmnElement="f14">
+        <di:waypoint x="1560" y="245" />
+        <di:waypoint x="1560" y="18" />
+        <di:waypoint x="945" y="18" />
+        <di:waypoint x="945" y="65" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1564" y="114" width="140" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f15_di" bpmnElement="f15">
+        <di:waypoint x="1785" y="100" />
+        <di:waypoint x="1880" y="100" />
+        <di:waypoint x="1880" y="235" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f16_di" bpmnElement="f16">
+        <di:waypoint x="1945" y="270" />
+        <di:waypoint x="2022" y="270" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f17_di" bpmnElement="f17">
+        <di:waypoint x="1785" y="400" />
+        <di:waypoint x="1855" y="400" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f18_di" bpmnElement="f18">
+        <di:waypoint x="1905" y="400" />
+        <di:waypoint x="1975" y="400" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1944" y="382" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f19_di" bpmnElement="f19">
+        <di:waypoint x="1880" y="375" />
+        <di:waypoint x="1880" y="335" />
+        <di:waypoint x="2200" y="335" />
+        <di:waypoint x="2200" y="305" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1884" y="337" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f20_di" bpmnElement="f20">
+        <di:waypoint x="2265" y="270" />
+        <di:waypoint x="2342" y="270" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f21_di" bpmnElement="f21">
+        <di:waypoint x="2040" y="435" />
+        <di:waypoint x="2040" y="525" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f22_di" bpmnElement="f22">
+        <di:waypoint x="2105" y="560" />
+        <di:waypoint x="2135" y="560" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f23_di" bpmnElement="f23">
+        <di:waypoint x="2265" y="560" />
+        <di:waypoint x="2342" y="560" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

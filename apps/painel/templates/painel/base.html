@@ -1,0 +1,32 @@
+{% load static %}<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Painel de TI{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'painel/painel.css' %}">
+  {% block cabeca %}{% endblock %}
+</head>
+<body>
+  <header class="barra">
+    <a class="logo" href="{% url 'painel:fila' %}">Painel de TI</a>
+    {% if user.is_authenticated %}
+    <nav>
+      <a href="{% url 'painel:fila' %}">Fila</a>
+      <a href="{% url 'painel:fila' %}?meus=1">Meus chamados</a>
+      {% if user.is_staff %}<a href="{% url 'admin:index' %}">Administração</a>{% endif %}
+      <form method="post" action="{% url 'painel:sair' %}">{% csrf_token %}
+        <button type="submit" class="link">Sair ({{ user.get_username }})</button>
+      </form>
+    </nav>
+    {% endif %}
+  </header>
+  <main class="conteudo">
+    {% if messages %}
+      {% for m in messages %}<div class="aviso {{ m.tags }}">{{ m }}</div>{% endfor %}
+    {% endif %}
+    {% block conteudo %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

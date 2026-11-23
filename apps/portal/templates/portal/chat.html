@@ -1,0 +1,36 @@
+{% load static %}<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ nome_central }}</title>
+  <link rel="stylesheet" href="{% static 'portal/chat.css' %}">
+</head>
+<body>
+  <div class="app">
+    <header class="topo">
+      <div class="marca" aria-hidden="true">TI</div>
+      <div>
+        <h1>{{ nome_central }}</h1>
+        <p class="sub">Assistente de atendimento</p>
+      </div>
+    </header>
+
+    <div id="faixa-chamado" class="faixa" hidden role="status"></div>
+
+    <main id="mensagens" class="mensagens" aria-live="polite" aria-label="Conversa"></main>
+
+    <div id="opcoes" class="opcoes" aria-label="Respostas rápidas"></div>
+
+    <form id="form" class="entrada" autocomplete="off">
+      <label for="texto" class="sr-only">Mensagem</label>
+      <textarea id="texto" rows="1" maxlength="2000" placeholder="Digite o número da opção ou descreva o problema…" required></textarea>
+      <button type="submit" id="enviar" aria-label="Enviar">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg>
+      </button>
+    </form>
+    <p class="rodape">🔒 Nunca envie senhas ou códigos de verificação. A TI não pede esses dados.</p>
+  </div>
+  <script src="{% static 'portal/chat.js' %}" defer></script>
+</body>
+</html>

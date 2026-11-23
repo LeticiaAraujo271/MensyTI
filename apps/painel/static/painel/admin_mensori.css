@@ -1,0 +1,144 @@
+/*
+ * Tema Mensori para o Django Admin (/admin/). Sem azul.
+ * Sobrescreve as variáveis de cor de admin/css/base.css e admin/css/dark_mode.css.
+ */
+html[data-theme="light"],
+:root {
+    --mensori-primary: #00564F;
+    --mensori-dark-green: #003C38;
+    --mensori-black: #111315;
+    --mensori-white: #FFFFFF;
+    --mensori-light-gray: #F3F5F5;
+
+    --primary: var(--mensori-primary);          /* títulos dos módulos */
+    --secondary: var(--mensori-dark-green);     /* barra do topo */
+    --accent: var(--mensori-white);
+    --primary-fg: var(--mensori-white);
+
+    --body-fg: var(--mensori-black);
+    --body-bg: var(--mensori-white);
+    --body-quiet-color: #5E6665;
+    --body-medium-color: #3A4140;
+    --body-loud-color: var(--mensori-black);
+
+    --header-color: var(--mensori-light-gray);
+    --header-branding-color: var(--mensori-white);
+    --header-bg: var(--secondary);
+    --header-link-color: var(--mensori-white);
+
+    --breadcrumbs-fg: #CFE3E0;
+    --breadcrumbs-link-fg: var(--mensori-white);
+    --breadcrumbs-bg: var(--mensori-primary);
+
+    --link-fg: var(--mensori-primary);
+    --link-hover-color: var(--mensori-dark-green);
+    --link-selected-fg: var(--mensori-dark-green);
+
+    --hairline-color: #E6EBEA;
+    --border-color: #DDE3E2;
+
+    --error-fg: #B42318;
+    --message-success-bg: #DCEBE9;
+    --message-warning-bg: #FFF4E5;
+    --message-error-bg: #FDECEA;
+
+    --darkened-bg: var(--mensori-light-gray);
+    --selected-bg: #E6EBEA;
+    --selected-row: #DCEBE9;
+
+    --button-fg: var(--mensori-white);
+    --button-bg: var(--mensori-primary);
+    --button-hover-bg: var(--mensori-dark-green);
+    --default-button-bg: var(--mensori-dark-green);
+    --default-button-hover-bg: var(--mensori-primary);
+    --close-button-bg: #5E6665;
+    --close-button-hover-bg: var(--mensori-black);
+    --delete-button-bg: #B42318;
+    --delete-button-hover-bg: #912018;
+
+    --object-tools-fg: var(--button-fg);
+    --object-tools-bg: var(--close-button-bg);
+    --object-tools-hover-bg: var(--close-button-hover-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary: var(--mensori-dark-green);
+        --secondary: var(--mensori-dark-green);
+        --primary-fg: var(--mensori-light-gray);
+
+        --body-fg: var(--mensori-light-gray);
+        --body-bg: var(--mensori-black);
+        --body-quiet-color: #A2AAA9;
+        --body-medium-color: #CBD2D1;
+        --body-loud-color: var(--mensori-white);
+
+        --breadcrumbs-link-fg: var(--mensori-light-gray);
+        --breadcrumbs-bg: var(--mensori-primary);
+
+        --link-fg: #5DB3A8;
+        --link-hover-color: #8CCBC2;
+        --link-selected-fg: #5DB3A8;
+
+        --hairline-color: #2C3231;
+        --border-color: #353B3A;
+
+        --error-fg: #F97066;
+        --message-success-bg: var(--mensori-dark-green);
+        --message-warning-bg: #583305;
+        --message-error-bg: #5A1410;
+
+        --darkened-bg: #1A1D1F;
+        --selected-bg: #232829;
+        --selected-row: var(--mensori-dark-green);
+
+        --close-button-bg: #3A4140;
+        --close-button-hover-bg: #5E6665;
+    }
+}
+
+html[data-theme="dark"] {
+    --primary: var(--mensori-dark-green);
+    --secondary: var(--mensori-dark-green);
+    --primary-fg: var(--mensori-light-gray);
+
+    --body-fg: var(--mensori-light-gray);
+    --body-bg: var(--mensori-black);
+    --body-quiet-color: #A2AAA9;
+    --body-medium-color: #CBD2D1;
+    --body-loud-color: var(--mensori-white);
+
+    --breadcrumbs-link-fg: var(--mensori-light-gray);
+    --breadcrumbs-bg: var(--mensori-primary);
+
+    --link-fg: #5DB3A8;
+    --link-hover-color: #8CCBC2;
+    --link-selected-fg: #5DB3A8;
+
+    --hairline-color: #2C3231;
+    --border-color: #353B3A;
+
+    --error-fg: #F97066;
+    --message-success-bg: var(--mensori-dark-green);
+    --message-warning-bg: #583305;
+    --message-error-bg: #5A1410;
+
+    --darkened-bg: #1A1D1F;
+    --selected-bg: #232829;
+    --selected-row: var(--mensori-dark-green);
+
+    --close-button-bg: #3A4140;
+    --close-button-hover-bg: #5E6665;
+}
+
+/* Ícones SVG do Django que vêm em azul (setas dos seletores de permissão, calendário e relógio):
+   giram o tom para o verde Mensori. */
+.selector-add, .selector-remove, .selector-chooseall, .selector-clearall,
+.selector-chooser a, .datetimeshortcuts a span, .selector .search-label-icon,
+.viewlink, .inlineviewlink, #changelist-filter a[href*="_facets"] {
+    filter: hue-rotate(-25deg) saturate(0.85);
+}
+
+/* Barra do topo e títulos */
+#header { color: var(--header-color); }
+#site-name a, #site-name a:link, #site-name a:visited { color: var(--header-branding-color); font-weight: 600; }
