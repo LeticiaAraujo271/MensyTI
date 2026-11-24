@@ -1,0 +1,26 @@
+{
+  // Central de TI no GitHub Codespaces: Code > Codespaces > Create codespace on main.
+  // Na primeira vez o preparar.sh instala tudo e cria o administrador; depois o
+  // servidor liga sozinho e a tela abre no navegador (porta 8000).
+  "name": "Central de TI",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "postCreateCommand": "bash .devcontainer/preparar.sh",
+  "postAttachCommand": {
+    "servidor": "bash .devcontainer/ligar.sh"
+  },
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": {
+      "label": "Central de TI",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "customizations": {
+    "codespaces": {
+      "openFiles": ["ACESSO_CODESPACE.txt"]
+    },
+    "vscode": {
+      "extensions": ["ms-python.python"]
+    }
+  }
+}

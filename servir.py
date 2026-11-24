@@ -24,9 +24,14 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 arquivo = RotatingFileHandler(BASE_DIR / "logs" / "servidor.log", maxBytes=5_000_000,
                               backupCount=3, encoding="utf-8")
 arquivo.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
-logging.basicConfig(level=logging.INFO, handlers=[arquivo], force=True)
 if sys.stdout is None or sys.stderr is None:  # pythonw.exe
     sys.stdout = sys.stderr = open(BASE_DIR / "logs" / "saida.log", "a", encoding="utf-8", buffering=1)
+    handlers = [arquivo]
+else:  # rodando num terminal (ex.: GitHub Codespaces): mostra o log na tela também
+    tela = logging.StreamHandler()
+    tela.setFormatter(arquivo.formatter)
+    handlers = [arquivo, tela]
+logging.basicConfig(level=logging.INFO, handlers=handlers, force=True)
 
 
 def main() -> None:

@@ -67,6 +67,43 @@ analista, sistema), `Chamado` + `EventoChamado`, `Categoria` + `Orientacao`, `Or
 Status do chamado: `aberto → em_fila → em_atendimento ⇄ aguardando_usuario → resolvido → fechado`
 (resolvido ou fechado pode ser **reaberto** no painel).
 
+## Abrir pelo GitHub (sem instalar nada)
+
+[![Abrir no GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/gz5n88ks84-glitch/MensyTI?quickstart=1)
+
+O **GitHub Codespaces** liga a Central num computador do próprio GitHub e abre a tela no navegador,
+de qualquer lugar (inclusive fora da rede da empresa).
+
+1. Entre no GitHub com a conta que tem acesso ao repositório e clique no botão acima
+   (ou, no repositório: **Code → Codespaces → Create codespace on main**).
+2. Na primeira vez, espere de 2 a 4 minutos: ele instala tudo, cria o banco e o administrador.
+3. A Central abre sozinha numa aba nova. Se não abrir: aba **PORTS** (embaixo) → linha
+   **Central de TI (8000)** → ícone do globo 🌐.
+4. O usuário e a senha do painel/admin ficam no arquivo **ACESSO_CODESPACE.txt**, que abre sozinho
+   no editor (usuário `admin`). Troque a senha em `/admin/` → Usuários.
+
+| Endereço | Para quem |
+|---|---|
+| `https://<seu-codespace>-8000.app.github.dev/` | Chat |
+| `https://<seu-codespace>-8000.app.github.dev/painel/` | Painel de TI |
+| `https://<seu-codespace>-8000.app.github.dev/admin/` | Administração |
+
+**Mostrar para outras pessoas:** por padrão o link só abre para você (logado no GitHub). Para
+outra pessoa abrir, na aba **PORTS**, clique com o botão direito na porta 8000 →
+**Port Visibility → Public** e envie o link. Qualquer pessoa com o link abre a tela; volte para
+**Private** quando terminar.
+
+**Limites do Codespaces** (bom para testar e demonstrar, não para uso diário da empresa):
+
+- ele **desliga sozinho depois de 30 minutos sem uso**; para voltar, abra
+  <https://github.com/codespaces> e clique no codespace (os dados ficam guardados enquanto o
+  codespace existir; apagar o codespace apaga o banco dele);
+- a conta gratuita do GitHub tem uma cota mensal de horas de uso;
+- o link muda se você criar outro codespace.
+
+Para a Central ficar no ar o tempo todo, use o computador da empresa (passos 7 e 8 abaixo) ou um
+servidor/nuvem (veja **Produção**).
+
 ## Como rodar no Windows (passo a passo)
 
 ### Pré-requisitos
