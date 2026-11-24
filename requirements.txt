@@ -1,4 +1,8 @@
-Django>=5.1,<6.0
-requests>=2.31
-psycopg[binary]>=3.1   # só se for usar PostgreSQL
-gunicorn>=22.0         # servidor de produção (Linux)
+# Dependências da Central de TI (testado com Python 3.12+ no Windows)
+Django>=5.2,<6.0
+python-decouple>=3.8      # lê SECRET_KEY, DEBUG, tokens etc. do .env
+requests>=2.32            # chamadas à API do Digisac
+waitress>=3.0             # servidor que roda a Central em segundo plano no Windows (servir.py)
+whitenoise>=6.7           # entrega CSS/JS sem depender do runserver
+psycopg[binary]>=3.2      # só é usado com PostgreSQL (DB_NAME preenchido)
+gunicorn>=23.0            # servidor de produção (Linux); não é usado no Windows

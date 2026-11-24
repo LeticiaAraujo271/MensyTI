@@ -55,30 +55,163 @@ analista, sistema), `Chamado` + `EventoChamado`, `Categoria` + `Orientacao`, `Or
 Status do chamado: `aberto → em_fila → em_atendimento ⇄ aguardando_usuario → resolvido → fechado`
 (resolvido ou fechado pode ser **reaberto** no painel).
 
-## Instalação (Windows / PowerShell)
+## Como rodar no Windows (passo a passo)
 
-**Jeito rápido:** na pasta do projeto, rode
-`powershell -ExecutionPolicy Bypass -File .\iniciar.ps1`. Na primeira vez, o script cria o
-ambiente, instala as dependências, prepara o banco, pede o usuário administrador e liga o servidor.
-Nas próximas vezes, ele só liga o servidor.
+### Pré-requisitos
 
-Passo a passo manual:
+- **Python 3.12 ou mais novo** (<https://www.python.org/downloads/>). Na instalação, marque
+  **"Add python.exe to PATH"**. Confira no PowerShell: `python --version`.
+- **Git** (<https://git-scm.com/download/win>). Confira: `git --version`.
+- Para testar o webhook do WhatsApp: **ngrok** (<https://ngrok.com/download>), opcional.
+
+Todos os comandos abaixo são para o **PowerShell**, rodados na pasta do projeto.
+
+> **Jeito rápido:** depois de clonar (passo 1), rode
+> `powershell -ExecutionPolicy Bypass -File .\iniciar.ps1`. Na primeira vez o script cria o
+> ambiente, instala as dependências, cria o `.env` com uma chave secreta nova, prepara o banco, pede
+> o usuário administrador e liga o servidor. Nas próximas vezes, ele só liga o servidor.
+> Os passos 2 a 6 fazem a mesma coisa à mão.
+
+### 1. Clonar o repositório
+
+```powershell
+git clone https://github.com/gz5n88ks84-glitch/MensyTI.git
+cd MensyTI
+```
+
+### 2. Criar e ativar o ambiente virtual (venv)
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+```
+
+O começo da linha passa a mostrar `(.venv)`. Se aparecer o erro *"a execução de scripts foi
+desabilitada neste sistema"*, libere só para esta janela e ative de novo:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-python -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements.txt
-Copy-Item .env.example .env            # ajuste se quiser; os padrões já funcionam localmente
-
-.venv\Scripts\python.exe manage.py migrate
-.venv\Scripts\python.exe manage.py popular_orientacoes   # base de conhecimento inicial
-.venv\Scripts\python.exe manage.py configurar_perfis     # grupos Analista / Administrador de TI
-.venv\Scripts\python.exe manage.py createsuperuser
-.venv\Scripts\python.exe manage.py runserver
+.venv\Scripts\Activate.ps1
 ```
 
-Abra <http://127.0.0.1:8000/> (chat) e <http://127.0.0.1:8000/painel/> (equipe).
-No Linux/macOS, use `.venv/bin/python` e `cp`.
+> Toda vez que abrir um PowerShell novo, ative o venv de novo (`.venv\Scripts\Activate.ps1`)
+> antes de usar o `python manage.py`.
+
+### 3. Instalar as dependências
+
+```powershell
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### 4. Configurar o `.env`
+
+As configurações e os segredos (chave do Django, tokens do Digisac) ficam no arquivo `.env`, lido
+pelo [python-decouple](https://pypi.org/project/python-decouple/). Ele **não vai para o Git**; o
+repositório só tem o modelo [.env.example](.env.example), sem valores reais.
+
+```powershell
+Copy-Item .env.example .env
+python -c "import secrets; print(secrets.token_urlsafe(50))"
+```
+
+Abra o `.env` (`notepad .env`) e cole a chave gerada em `DJANGO_SECRET_KEY=`. Para rodar no seu
+computador, o resto pode ficar como está. Principais variáveis:
+
+| Variável | Para que serve |
+|---|---|
+| `DJANGO_SECRET_KEY` | **Obrigatória.** Chave secreta do Django; sem ela o projeto não sobe |
+| `DJANGO_DEBUG` | `true` no seu computador, `false` em produção |
+| `DJANGO_ALLOWED_HOSTS` | Endereços aceitos, separados por vírgula |
+| `WHATSAPP_ATIVO` | `true` liga o canal WhatsApp (Digisac); com `false` o webhook ignora as mensagens |
+| `DIGISAC_URL`, `DIGISAC_TOKEN` | Endereço da conta e token pessoal da API do Digisac |
+| `DIGISAC_WEBHOOK_TOKEN` | Segredo que o Digisac manda na URL do webhook |
+| `DIGISAC_ENVIAR_MENSAGENS` | `false` só registra as respostas no log, sem enviar ao WhatsApp |
+
+As demais estão comentadas no próprio `.env.example`. Uma variável definida no sistema
+(`$env:NOME = "valor"`) tem prioridade sobre o `.env`.
+
+### 5. Criar o banco (migrate) e os dados iniciais
+
+```powershell
+python manage.py migrate
+python manage.py popular_orientacoes   # base de conhecimento inicial
+python manage.py configurar_perfis     # grupos Analista de TI / Administrador de TI
+python manage.py createsuperuser       # seu usuário de administrador
+```
+
+Sem `DB_NAME` no `.env`, o banco é o SQLite (`db.sqlite3`, criado na pasta do projeto e fora do Git).
+
+### 6. Ligar o servidor (runserver)
+
+```powershell
+python manage.py runserver
+```
+
+Abra <http://127.0.0.1:8000/> (chat), <http://127.0.0.1:8000/painel/> (equipe) e
+<http://127.0.0.1:8000/admin/> (administração). `Ctrl+C` para parar.
+
+No Linux/macOS, ative com `source .venv/bin/activate` e copie com `cp .env.example .env`.
+
+> O `runserver` só funciona enquanto a janela dele estiver aberta. Para a Central ficar sempre no
+> ar, use o passo 7.
+
+### 7. Deixar a Central sempre ligada (segundo plano)
+
+Para não depender de nenhuma janela, terminal ou editor aberto, instale a Central como tarefa do
+Windows (não precisa ser administrador):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\instalar_servico.ps1
+```
+
+O script prepara o projeto (como o `iniciar.ps1`) e cria a tarefa agendada **"Central de TI"**,
+que roda o [servir.py](servir.py) com o servidor **Waitress**, sem janela. A partir daí:
+
+- a Central **liga sozinha sempre que você entra no Windows** e fica no ar até desligar o computador;
+- pode fechar o PowerShell, o VS Code e tudo mais: <http://127.0.0.1:8000/> continua funcionando;
+- se o servidor cair, o Windows tenta religar a cada minuto;
+- os registros ficam em `logs\servidor.log` (e erros de inicialização em `logs\saida.log`).
+
+| Comando (na pasta do projeto) | Para que serve |
+|---|---|
+| `powershell -ExecutionPolicy Bypass -File .\instalar_servico.ps1 -Status` | Mostra se a Central está no ar |
+| `powershell -ExecutionPolicy Bypass -File .\instalar_servico.ps1 -Reiniciar` | Religa; use depois de mudar o `.env` ou atualizar o código (`git pull`) |
+| `powershell -ExecutionPolicy Bypass -File .\instalar_servico.ps1 -Remover` | Desliga e tira da inicialização do Windows |
+
+A tarefa também aparece no **Agendador de Tarefas** do Windows, com o nome "Central de TI".
+Enquanto ela estiver ativa, não rode o `runserver` na mesma porta: use `-Remover` antes ou escolha
+outra porta (`python manage.py runserver 8001`).
+
+**Acesso pelos outros computadores da rede:** por padrão, só este computador acessa a Central
+(`SERVIDOR_HOST=127.0.0.1`). Para os colegas abrirem o chat pelo IP desta máquina, no `.env`:
+
+```ini
+SERVIDOR_HOST=0.0.0.0
+DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,192.168.0.50    # troque pelo IP desta máquina (ipconfig)
+```
+
+Depois rode `-Reiniciar` e libere a porta no firewall (PowerShell **como administrador**):
+
+```powershell
+New-NetFirewallRule -DisplayName "Central de TI" -Direction Inbound -Protocol TCP -LocalPort 8000 -Action Allow -Profile Domain,Private
+```
+
+Os colegas acessam `http://192.168.0.50:8000/`. Lembre-se de que a Central só fica disponível
+enquanto este computador estiver ligado e com você conectado. Para algo que funcione 24 horas,
+publique em um servidor da empresa ou na nuvem (veja **Produção**).
+
+### Problemas comuns
+
+| Mensagem | O que fazer |
+|---|---|
+| `'python' não é reconhecido...` | Reinstale o Python marcando "Add python.exe to PATH", ou use `py` no lugar de `python` |
+| `a execução de scripts foi desabilitada` | `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` |
+| `No module named 'decouple'` (ou `'django'`) | O venv não está ativo: `.venv\Scripts\Activate.ps1` e `pip install -r requirements.txt` |
+| `DJANGO_SECRET_KEY não definida` | Falta o `.env` ou a chave nele (passo 4) |
+| `Invalid HTTP_HOST header` | Acrescente o endereço em `DJANGO_ALLOWED_HOSTS` no `.env` |
+| `That port is already in use` | A tarefa "Central de TI" já está usando a 8000 (veja `-Status`), ou use outra porta: `python manage.py runserver 8001` |
+| O link não abre ("não é possível acessar esse site") | O servidor está desligado: rode `instalar_servico.ps1 -Status` e, se preciso, `-Reiniciar` ou o passo 7 |
 
 ### Equipe de TI
 
@@ -89,14 +222,14 @@ marque também "Membro da equipe".
 ### Testes
 
 ```powershell
-.venv\Scripts\python.exe manage.py test apps
+python manage.py test apps
 ```
 
 Cobrem os ramos resolvido e não resolvido, incidente crítico, fora do horário (sem perder
 mensagens), texto livre, falha e desligamento do WhatsApp, webhook e clique duplicados, isolamento
 entre colaboradores, permissões do painel e remoção de senhas.
 
-Para conversar pelo terminal: `.venv\Scripts\python.exe manage.py simular_conversa --novo`
+Para conversar pelo terminal: `python manage.py simular_conversa --novo`
 
 ## Base de conhecimento
 
@@ -123,6 +256,72 @@ portal funciona normalmente. Para ativar, quando houver as credenciais:
 Confirme as rotas da API na documentação da sua conta antes de ativar
 ([apps/digisac/client.py](apps/digisac/client.py)). O atendimento humano acontece no painel da Central.
 
+### Testar o webhook no seu computador com o ngrok
+
+O Digisac precisa de um endereço público com HTTPS para entregar as mensagens. O ngrok cria um
+túnel da internet até o seu `runserver`.
+
+1. Instale o ngrok, crie uma conta gratuita em <https://ngrok.com> e configure o seu token (uma vez só):
+
+   ```powershell
+   ngrok config add-authtoken SEU_TOKEN_DO_NGROK
+   ```
+
+2. Gere um segredo para o webhook:
+
+   ```powershell
+   python -c "import secrets; print(secrets.token_urlsafe(32))"
+   ```
+
+   e ajuste o `.env`:
+
+   ```ini
+   WHATSAPP_ATIVO=true
+   DIGISAC_WEBHOOK_TOKEN=cole-o-segredo-gerado
+   DIGISAC_ENVIAR_MENSAGENS=false
+   DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,.ngrok-free.app
+   ```
+
+   Com `DIGISAC_ENVIAR_MENSAGENS=false` o bot só registra no log o que responderia: dá para testar
+   sem mandar nada para o WhatsApp de ninguém.
+
+3. Em um PowerShell (com o venv ativo), ligue o servidor: `python manage.py runserver 8000`.
+   Em **outro** PowerShell, abra o túnel:
+
+   ```powershell
+   ngrok http 8000
+   ```
+
+   O ngrok mostra um endereço como `https://abcd-1234.ngrok-free.app` (no plano gratuito ele muda
+   cada vez que o ngrok é aberto). Em <http://127.0.0.1:4040> dá para ver cada requisição que chegou.
+
+4. Simule uma mensagem do Digisac (troque o endereço e o segredo):
+
+   ```powershell
+   $url = "https://abcd-1234.ngrok-free.app/webhooks/digisac/?token=SEU_SEGREDO"
+   $corpo = @{
+       event = "message.created"
+       data  = @{ id = "teste-1"; contactId = "contato-teste"; type = "chat"; text = "oi";
+                  isFromMe = $false; isFromBot = $false }
+   } | ConvertTo-Json -Depth 5
+   Invoke-RestMethod -Method Post -Uri $url -ContentType "application/json; charset=utf-8" -Body $corpo
+   ```
+
+   Resposta esperada: `ok: True` e `processadas: 1`. A resposta do bot aparece no terminal do
+   `runserver`, e a conversa fica no Admin, em **Conversas**. Para conferir a proteção, repita com
+   um token errado: a resposta deve ser **403 (token inválido)**. Se vier
+   `ignorado: canal WhatsApp desativado`, falta `WHATSAPP_ATIVO=true` (reinicie o `runserver`
+   depois de mudar o `.env`).
+
+5. Para receber mensagens reais, cadastre no Digisac o webhook
+   `https://abcd-1234.ngrok-free.app/webhooks/digisac/?token=SEU_SEGREDO` com o evento
+   `message.created` e mande uma mensagem para o número da conexão. Para o bot responder de
+   verdade, preencha `DIGISAC_URL`, `DIGISAC_TOKEN` e `DIGISAC_SERVICE_ID` e mude
+   `DIGISAC_ENVIAR_MENSAGENS=true`.
+
+> O endereço do ngrok é público: deixe o túnel aberto só enquanto estiver testando e nunca publique
+> o `DIGISAC_WEBHOOK_TOKEN`. Se ele vazar, gere outro e troque no `.env` e no Digisac.
+
 ## Fases
 
 | Fase | Escopo | Situação |
@@ -138,6 +337,8 @@ Confirme as rotas da API na documentação da sua conta antes de ativar
 - `DJANGO_DEBUG=false`, `DJANGO_SECRET_KEY` forte, `DJANGO_ALLOWED_HOSTS` e
   `DJANGO_CSRF_TRUSTED_ORIGINS` com o domínio, e HTTPS obrigatório.
 - PostgreSQL: preencha `DB_NAME` etc.
-- Arquivos estáticos: rode `manage.py collectstatic` e sirva `staticfiles/` pelo servidor web
-  (ou adicione o WhiteNoise).
-- Linux: `gunicorn config.wsgi`.
+- Arquivos estáticos: já são entregues pelo WhiteNoise (CSS/JS do chat, do painel e do Admin).
+- Windows: `python servir.py` (Waitress) ou o `instalar_servico.ps1`; Linux: `gunicorn config.wsgi`.
+- Com `DJANGO_DEBUG=false` os cookies de login passam a exigir HTTPS. Se for usar `false` em
+  `http://` (ex.: só na rede interna), coloque também `DJANGO_COOKIES_SEGUROS=false`, senão o login
+  do painel não funciona.
