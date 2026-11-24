@@ -9,21 +9,21 @@
   --sucesso: var(--mensori-dark-green); --erro: #B42318;
   /* prioridades: crítica e alta em tons quentes de alerta; média no verde Mensori; baixa em cinza */
   --p1: #B42318; --p2: #B54708; --p3: var(--mensori-primary); --p4: #6B7271;
-  --marca-dagua: .11; --logo-dagua: .07;   /* intensidade do fundo (roçadeira e trator) */
+  --marca-dagua: .14; --logo-dagua: .07;   /* intensidade do fundo (roçadeira e trator) */
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
   :root { --fundo: var(--mensori-black); --cartao: #1A1D1F; --texto: var(--mensori-light-gray);
           --suave: #A2AAA9; --borda: #2C3231; --primaria: #3F9A90; --primaria-forte: #5DB3A8;
           --primaria-texto: var(--mensori-black); --sucesso: #3F9A90; --erro: #F97066;
-          --p3: #3F9A90; --p4: #8A9291; --marca-dagua: .15; --logo-dagua: .09; }
+          --p3: #3F9A90; --p4: #8A9291; --marca-dagua: .18; --logo-dagua: .09; }
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--fundo); color: var(--texto);
        font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 /* Marca d'água (marca/padrao-rocada.svg) e logo oficial opcional (marca/logo.*) */
 body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-               background: url("../marca/padrao-rocada.svg") 0 0 / 360px 320px repeat;
+               background: url("../marca/padrao-rocada.svg") 0 0 / 300px 260px repeat;
                opacity: var(--marca-dagua); }
 .logo-dagua { position: fixed; right: 4vw; bottom: 4vh; z-index: -1; pointer-events: none;
               width: min(40vw, 320px); height: auto; opacity: var(--logo-dagua); }
