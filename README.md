@@ -57,6 +57,13 @@ Status do chamado: `aberto → em_fila → em_atendimento ⇄ aguardando_usuario
 
 ## Instalação (Windows / PowerShell)
 
+**Jeito rápido:** na pasta do projeto, rode
+`powershell -ExecutionPolicy Bypass -File .\iniciar.ps1`. Na primeira vez, o script cria o
+ambiente, instala as dependências, prepara o banco, pede o usuário administrador e liga o servidor.
+Nas próximas vezes, ele só liga o servidor.
+
+Passo a passo manual:
+
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 python -m venv .venv
