@@ -34,6 +34,7 @@ Write-Host "4/5 Atualizando o banco e a base de conhecimento..." -ForegroundColo
 & $py manage.py migrate --noinput
 & $py manage.py popular_orientacoes
 & $py manage.py configurar_perfis
+& $py manage.py collectstatic --noinput --verbosity 0   # CSS/JS/imagens em staticfiles\ para o Waitress
 
 $temAdmin = & $py manage.py shell -c "from django.contrib.auth.models import User; print(User.objects.filter(is_superuser=True).exists())"
 if (-not ($temAdmin -contains "True")) {

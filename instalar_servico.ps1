@@ -10,7 +10,8 @@
 #   powershell -ExecutionPolicy Bypass -File .\instalar_servico.ps1 -Status    mostra se está no ar
 #   powershell -ExecutionPolicy Bypass -File .\instalar_servico.ps1 -Reiniciar religa (depois de mudar o .env ou atualizar o código)
 #   powershell -ExecutionPolicy Bypass -File .\instalar_servico.ps1 -Remover   desliga e remove
-param([switch]$Remover, [switch]$Status, [switch]$Reiniciar)
+#   powershell -ExecutionPolicy Bypass -File .\instalar_servico.ps1 -Rede      libera o acesso para os colegas da rede
+param([switch]$Remover, [switch]$Status, [switch]$Reiniciar, [switch]$Rede)
 
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
@@ -21,6 +22,33 @@ function Get-Porta {
         Where-Object { $_ -match '^\s*SERVIDOR_PORTA\s*=\s*(\d+)' } | Select-Object -First 1
     if ($linha -and $linha -match '(\d+)\s*$') { return [int]$Matches[1] }
     return 8000
+}
+
+function Set-EnvValor {
+    param([string]$Chave, [string]$Valor)
+    $arquivo = Join-Path $PSScriptRoot ".env"
+    $linhas = @(Get-Content $arquivo -Encoding UTF8)
+    $achou = $false
+    $linhas = $linhas | ForEach-Object {
+        if ($_ -match "^\s*$Chave\s*=") { $achou = $true; "$Chave=$Valor" } else { $_ }
+    }
+    if (-not $achou) { $linhas = @($linhas) + "$Chave=$Valor" }
+    [System.IO.File]::WriteAllLines($arquivo, [string[]]$linhas, (New-Object System.Text.UTF8Encoding $false))
+}
+
+function Get-EnvValor {
+    param([string]$Chave)
+    $linha = Get-Content (Join-Path $PSScriptRoot ".env") -Encoding UTF8 -ErrorAction SilentlyContinue |
+        Where-Object { $_ -match "^\s*$Chave\s*=" } | Select-Object -First 1
+    if ($linha) { return ($linha -split "=", 2)[1].Trim() }
+    return ""
+}
+
+function Get-IpDaRede {
+    # IP da placa de rede que tem gateway (a que está ligada à rede da empresa)
+    $ip = Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -and $_.NetAdapter.Status -eq "Up" } |
+        ForEach-Object { $_.IPv4Address.IPAddress } | Select-Object -First 1
+    return $ip
 }
 
 function Test-NoAr {
@@ -71,6 +99,55 @@ if ($Reiniciar) {
     Start-ScheduledTask -TaskName $nomeTarefa
     if (Test-NoAr -Porta $porta -Segundos 30) { Write-Host "Central religada: http://127.0.0.1:$porta/" -ForegroundColor Green }
     else { Write-Host "A Central não respondeu. Veja logs\servidor.log e logs\saida.log." -ForegroundColor Red }
+    return
+}
+
+if ($Rede) {
+    if (-not (Test-Path (Join-Path $PSScriptRoot ".env"))) { & (Join-Path $PSScriptRoot "iniciar.ps1") -SoPreparar }
+    $ip = Get-IpDaRede
+    if (-not $ip) { Write-Host "Não encontrei a rede deste computador. Ele está conectado?" -ForegroundColor Red; return }
+    $nome = $env:COMPUTERNAME.ToLower()
+
+    # 1) .env: aceita conexões da rede e os endereços pelos quais os colegas vão chegar
+    $hosts = @((Get-EnvValor "DJANGO_ALLOWED_HOSTS") -split "," | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    foreach ($h in @("localhost", "127.0.0.1", $ip, $nome)) { if ($hosts -notcontains $h) { $hosts += $h } }
+    Set-EnvValor "SERVIDOR_HOST" "0.0.0.0"
+    Set-EnvValor "DJANGO_ALLOWED_HOSTS" ($hosts -join ",")
+    Set-EnvValor "DJANGO_DEBUG" "false"            # não mostra detalhes de erro para outras pessoas
+    Set-EnvValor "DJANGO_COOKIES_SEGUROS" "false"  # o login funciona em http:// dentro da rede
+    Write-Host "1/3 .env ajustado para a rede ($ip)." -ForegroundColor Green
+
+    # 2) Firewall do Windows: libera a porta só nas redes do domínio e privadas (nunca em rede pública)
+    $porta = Get-Porta
+    if (Get-NetFirewallRule -DisplayName "Central de TI" -ErrorAction SilentlyContinue) {
+        Write-Host "2/3 A porta $porta já está liberada no firewall." -ForegroundColor Green
+    } else {
+        Write-Host "2/3 Liberando a porta $porta no firewall. O Windows vai pedir permissão de administrador..." -ForegroundColor Yellow
+        $regra = "New-NetFirewallRule -DisplayName 'Central de TI' -Direction Inbound -Protocol TCP -LocalPort $porta -Action Allow -Profile Domain,Private"
+        try {
+            Start-Process powershell -Verb RunAs -Wait -ArgumentList "-NoProfile", "-Command", $regra
+        } catch { }
+        if (Get-NetFirewallRule -DisplayName "Central de TI" -ErrorAction SilentlyContinue) {
+            Write-Host "    Porta liberada." -ForegroundColor Green
+        } else {
+            Write-Host "    Não foi possível liberar. Peça para alguém com acesso de administrador rodar:" -ForegroundColor Red
+            Write-Host "    $regra"
+        }
+    }
+
+    # 3) Religa (ou instala) a Central com a nova configuração
+    Write-Host "3/3 Religando a Central..." -ForegroundColor Green
+    if (Get-ScheduledTask -TaskName $nomeTarefa -ErrorAction SilentlyContinue) {
+        Stop-Central
+        Start-ScheduledTask -TaskName $nomeTarefa
+        $null = Test-NoAr -Porta $porta -Segundos 30
+    } else {
+        & $PSCommandPath
+    }
+    Write-Host ""
+    Write-Host "Pronto! Envie estes endereços para os colegas (eles precisam estar na mesma rede):" -ForegroundColor Green
+    Write-Host "  Chat:   http://${ip}:$porta/      ou  http://${nome}:$porta/"
+    Write-Host "  Painel: http://${ip}:$porta/painel/"
     return
 }
 

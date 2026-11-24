@@ -8,8 +8,9 @@
   {% block cabeca %}{% endblock %}
 </head>
 <body>
+  {% if logo_marca %}<img class="logo-dagua" src="{% static logo_marca %}" alt="" aria-hidden="true">{% endif %}
   <header class="barra">
-    <a class="logo" href="{% url 'painel:fila' %}">Painel de TI</a>
+    <a class="logo" href="{% url 'painel:fila' %}">{% if logo_marca %}<img src="{% static logo_marca %}" alt="">{% endif %}Painel de TI</a>
     {% if user.is_authenticated %}
     <nav>
       <a href="{% url 'painel:fila' %}">Fila</a>

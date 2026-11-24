@@ -7,9 +7,14 @@
   <link rel="stylesheet" href="{% static 'portal/chat.css' %}">
 </head>
 <body>
+  {% if logo_marca %}<img class="logo-dagua" src="{% static logo_marca %}" alt="" aria-hidden="true">{% endif %}
   <div class="app">
     <header class="topo">
+      {% if logo_marca %}
+      <div class="marca com-logo"><img src="{% static logo_marca %}" alt="Logo"></div>
+      {% else %}
       <div class="marca" aria-hidden="true">TI</div>
+      {% endif %}
       <div>
         <h1>{{ nome_central }}</h1>
         <p class="sub">Assistente de atendimento</p>

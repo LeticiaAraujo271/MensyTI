@@ -8,12 +8,21 @@ atende pelo **painel de TI**. Conversas e chamados ficam no mesmo banco, qualque
 - Processo de referência: [docs/Central_TI_Multicanal_Bizagi.bpmn](docs/Central_TI_Multicanal_Bizagi.bpmn)
 - Especificação: [docs/especificacao.md](docs/especificacao.md)
 
+O chat e o painel têm um fundo em marca d'água (roçadeira e trator de roçada) em
+[apps/portal/static/marca/](apps/portal/static/marca/). Para incluir o **logo oficial da Mensori**,
+coloque o arquivo como `logo.svg` ou `logo.png` nessa pasta e religue a Central
+(`instalar_servico.ps1 -Reiniciar`): ele aparece no topo do chat, na barra do painel e clarinho no fundo.
+
 | Endereço | Para quem |
 |---|---|
 | `/` | Colaborador: chat da Central de TI (celular e desktop) |
 | `/painel/` | Analistas: fila, atendimento, resposta, solução |
 | `/admin/` | Administradores: base de conhecimento, usuários, perfis, conversas, métricas |
 | `/webhooks/digisac/?token=...` | Provedor de WhatsApp (só com `WHATSAPP_ATIVO=true`) |
+
+Os endereços acima são relativos ao computador onde a Central roda (ex.: `http://127.0.0.1:8000/`
+nele mesmo). Para os colegas acessarem pela rede, veja o passo
+[8. Acesso dos colegas pela rede](#8-acesso-dos-colegas-pela-rede).
 
 ## Fluxo (BPMN)
 
@@ -46,6 +55,9 @@ apps/canais/                  ChannelAdapter, WebChannel e WhatsAppChannel (atr�
 apps/portal/                  Chat web (HTML/CSS/JS sem build) + API JSON
 apps/painel/                  Painel dos analistas (login + permissão)
 apps/digisac/                 Cliente da API e webhook do provedor de WhatsApp
+apps/portal/static/marca/     Marca d'água do chat e do painel (roçadeira, trator) e lugar do logo oficial
+servir.py                     Servidor Waitress (Windows) usado pela tarefa em segundo plano
+instalar_servico.ps1          Instala/controla a tarefa "Central de TI" (-Status, -Reiniciar, -Rede, -Remover)
 ```
 
 Modelos: `Colaborador`, `Conversa` (um atendimento por canal), `Mensagem` (colaborador, bot,
@@ -183,23 +195,56 @@ A tarefa também aparece no **Agendador de Tarefas** do Windows, com o nome "Cen
 Enquanto ela estiver ativa, não rode o `runserver` na mesma porta: use `-Remover` antes ou escolha
 outra porta (`python manage.py runserver 8001`).
 
-**Acesso pelos outros computadores da rede:** por padrão, só este computador acessa a Central
-(`SERVIDOR_HOST=127.0.0.1`). Para os colegas abrirem o chat pelo IP desta máquina, no `.env`:
+Para os colegas acessarem de outros computadores, veja o passo 8.
 
-```ini
-SERVIDOR_HOST=0.0.0.0
-DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,192.168.0.50    # troque pelo IP desta máquina (ipconfig)
-```
+### 8. Acesso dos colegas pela rede
 
-Depois rode `-Reiniciar` e libere a porta no firewall (PowerShell **como administrador**):
+Por padrão, só o computador onde a Central está instalada abre os endereços
+(`SERVIDOR_HOST=127.0.0.1`). Para os colegas usarem o chat e o painel pelo navegador deles, rode
+**uma vez**, no computador da Central:
 
 ```powershell
-New-NetFirewallRule -DisplayName "Central de TI" -Direction Inbound -Protocol TCP -LocalPort 8000 -Action Allow -Profile Domain,Private
+powershell -ExecutionPolicy Bypass -File .\instalar_servico.ps1 -Rede
 ```
 
-Os colegas acessam `http://192.168.0.50:8000/`. Lembre-se de que a Central só fica disponível
-enquanto este computador estiver ligado e com você conectado. Para algo que funcione 24 horas,
-publique em um servidor da empresa ou na nuvem (veja **Produção**).
+O script:
+
+1. descobre o IP deste computador na rede da empresa (ex.: `192.168.0.50`) e o nome dele;
+2. ajusta o `.env`: `SERVIDOR_HOST=0.0.0.0`, coloca o IP e o nome em `DJANGO_ALLOWED_HOSTS`,
+   `DJANGO_DEBUG=false` (ninguém vê detalhes técnicos de erro) e `DJANGO_COOKIES_SEGUROS=false`
+   (o login do painel funciona em `http://` dentro da rede);
+3. libera a porta 8000 no Firewall do Windows, só nas redes do domínio e privadas (nunca em Wi-Fi
+   público). O Windows pede permissão de administrador uma vez; se você não tiver, o script mostra
+   o comando para a equipe de TI rodar;
+4. religa a Central e mostra os endereços para enviar aos colegas.
+
+**O que os colegas fazem:** nada para instalar. Basta abrir no navegador (Chrome, Edge, celular no
+Wi-Fi da empresa) o endereço que o script mostrou:
+
+| Para quem | Endereço (exemplo) |
+|---|---|
+| Colaboradores (chat) | `http://192.168.0.50:8000/` ou `http://nome-do-computador:8000/` |
+| Analistas de TI (painel) | `http://192.168.0.50:8000/painel/`, com o usuário criado no Admin (veja **Equipe de TI**) |
+| Administradores | `http://192.168.0.50:8000/admin/` |
+
+Para conferir se está tudo certo: `instalar_servico.ps1 -Status` neste computador e, em outro
+computador da rede, `Test-NetConnection 192.168.0.50 -Port 8000` (deve mostrar
+`TcpTestSucceeded : True`).
+
+Se não abrir no computador do colega:
+
+| Sintoma | O que fazer |
+|---|---|
+| "Não é possível acessar esse site" / demora e dá erro | A Central está desligada (`-Status`), o firewall não foi liberado (rode `-Rede` de novo) ou o colega não está na mesma rede/VPN |
+| "Bad Request (400)" | O endereço usado não está em `DJANGO_ALLOWED_HOSTS`: rode `-Rede` de novo (ele acrescenta o IP atual) |
+| Funcionava e parou depois de alguns dias | O IP deste computador mudou. Rode `-Rede` de novo e mande o endereço novo, ou use o endereço pelo nome do computador. Para não mudar mais, peça à equipe de redes um **IP fixo** (reserva no DHCP) para esta máquina |
+| O login do painel volta para a tela de login | Confira `DJANGO_COOKIES_SEGUROS=false` no `.env` e rode `-Reiniciar` |
+
+Para voltar a ser só local: no `.env`, `SERVIDOR_HOST=127.0.0.1`, e rode `-Reiniciar`.
+
+> A Central só fica disponível enquanto este computador estiver ligado e com o usuário conectado
+> no Windows. Para funcionar 24 horas, sem depender de um computador pessoal, publique em um
+> servidor da empresa ou na nuvem (veja **Produção**).
 
 ### Problemas comuns
 

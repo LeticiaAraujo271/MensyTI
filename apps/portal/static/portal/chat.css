@@ -23,6 +23,8 @@
   --sistema: #E8EEED;
   --erro: #B42318;
   --sombra: 0 1px 2px rgba(17, 19, 21, .08);
+  --marca-dagua: .13;                /* intensidade do desenho de fundo */
+  --logo-dagua: .08;
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
@@ -44,25 +46,43 @@
     --sistema: #262B2B;
     --erro: #F97066;
     --sombra: none;
+    --marca-dagua: .16;
+    --logo-dagua: .10;
   }
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {
+  position: relative;
   background: var(--fundo);
   color: var(--texto);
   font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
+/* Marca d'água: roçadeira e trator (marca/padrao-rocada.svg) atrás de toda a tela */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: url("../marca/padrao-rocada.svg") 0 0 / 360px 320px repeat;
+  opacity: var(--marca-dagua);
+}
+/* Logo oficial (se existir em marca/logo.*), grande e bem clarinho no centro */
+.logo-dagua {
+  position: fixed; left: 50%; top: 50%; z-index: -1; pointer-events: none;
+  width: min(70vw, 360px); height: auto; transform: translate(-50%, -50%);
+  opacity: var(--logo-dagua);
+}
 .app {
   display: flex; flex-direction: column;
   height: 100dvh; max-width: 760px; margin: 0 auto;
-  background: var(--painel);
+  background: transparent;           /* deixa a marca d'água aparecer na conversa */
   border-left: 1px solid var(--borda); border-right: 1px solid var(--borda);
 }
 .topo {
   display: flex; align-items: center; gap: 12px;
   padding: 12px 16px; border-bottom: 1px solid var(--borda);
+  background: var(--painel);
 }
+.marca img { width: 100%; height: 100%; object-fit: contain; }
+.marca.com-logo { background: var(--mensori-white); padding: 4px; border: 1px solid var(--borda); }
 .marca {
   width: 40px; height: 40px; border-radius: 10px; flex: none;
   display: grid; place-items: center; font-weight: 700;
@@ -77,7 +97,7 @@ body {
 .mensagens {
   flex: 1; overflow-y: auto; padding: 16px;
   display: flex; flex-direction: column; gap: 8px;
-  background: var(--fundo);
+  background: transparent;
 }
 .msg {
   max-width: 85%; padding: 8px 12px; border-radius: 12px;
@@ -93,7 +113,8 @@ body {
 }
 .msg.analista .quem { color: var(--analista-destaque); }
 .msg.sistema { align-self: center; background: var(--sistema); max-width: 95%; }
-.digitando { align-self: flex-start; color: var(--suave); font-size: 13px; padding: 4px 8px; }
+.digitando { align-self: flex-start; color: var(--suave); font-size: 13px; padding: 4px 8px;
+             background: var(--painel); border-radius: 999px; }
 .opcoes {
   display: flex; flex-wrap: wrap; gap: 6px;
   padding: 8px 16px 0; background: var(--painel);
@@ -106,7 +127,7 @@ body {
 }
 .opcoes button:hover, .opcoes button:focus-visible { background: var(--primaria); color: var(--primaria-texto); }
 .entrada button:hover:not(:disabled) { background: var(--primaria-forte); }
-.entrada { display: flex; gap: 8px; padding: 10px 16px; align-items: flex-end; }
+.entrada { display: flex; gap: 8px; padding: 10px 16px; align-items: flex-end; background: var(--painel); }
 .entrada textarea {
   flex: 1; resize: none; max-height: 140px;
   padding: 10px 12px; border: 1px solid var(--borda); border-radius: 12px;
@@ -119,7 +140,7 @@ body {
   display: grid; place-items: center;
 }
 .entrada button:disabled { opacity: .5; cursor: default; }
-.rodape { margin: 0; padding: 0 16px 10px; font-size: 12px; color: var(--suave); }
+.rodape { margin: 0; padding: 0 16px 10px; font-size: 12px; color: var(--suave); background: var(--painel); }
 .erro { align-self: center; color: var(--erro); font-size: 13px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 @media (max-width: 600px) {
