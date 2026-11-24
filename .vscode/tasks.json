@@ -1,0 +1,121 @@
+{
+  // Central de TI: Terminal > Run Task... (ou Ctrl+Shift+P > "Tasks: Run Task").
+  // Todas rodam o Python do ambiente escolhido no VS Code (canto inferior direito / "Python: Select
+  // Interpreter"), direto, sem PowerShell nem outro shell ("type": "process").
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Central: preparar (primeira vez ou depois de atualizar)",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["preparar.py"],
+      "problemMatcher": [],
+      "presentation": { "focus": true, "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Central: ligar (desenvolvimento)",
+      "detail": "manage.py runserver em http://127.0.0.1:8000/ (Ctrl+C para parar)",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["manage.py", "runserver", "127.0.0.1:8000"],
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Central: ligar como servidor (Waitress)",
+      "detail": "servir.py: o mesmo servidor do segundo plano, com o log na tela",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["servir.py"],
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Central: testes",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["manage.py", "test", "apps"],
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Central: segundo plano - instalar",
+      "detail": "liga sozinha ao entrar no Windows e religa se cair",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["manage.py", "servico", "instalar"],
+      "problemMatcher": [],
+      "presentation": { "focus": true, "panel": "shared", "clear": true }
+    },
+    {
+      "label": "Central: segundo plano - status",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["manage.py", "servico", "status"],
+      "problemMatcher": [],
+      "presentation": { "panel": "shared", "clear": true }
+    },
+    {
+      "label": "Central: segundo plano - reiniciar",
+      "detail": "depois de mudar o .env ou atualizar o código",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["manage.py", "servico", "reiniciar"],
+      "problemMatcher": [],
+      "presentation": { "panel": "shared", "clear": true }
+    },
+    {
+      "label": "Central: segundo plano - remover",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["manage.py", "servico", "remover"],
+      "problemMatcher": [],
+      "presentation": { "panel": "shared", "clear": true }
+    },
+    {
+      "label": "Central: liberar acesso pela rede",
+      "detail": "ajusta o .env para os colegas e mostra os endereços",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["manage.py", "servico", "rede"],
+      "problemMatcher": [],
+      "presentation": { "focus": true, "panel": "shared", "clear": true }
+    },
+    {
+      "label": "Central: configurar WhatsApp e e-mail",
+      "detail": "pergunta no terminal; senhas e tokens não aparecem na tela",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["manage.py", "configurar_integracoes"],
+      "problemMatcher": [],
+      "presentation": { "focus": true, "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Central: conferir WhatsApp (Digisac)",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["manage.py", "testar_digisac"],
+      "problemMatcher": [],
+      "presentation": { "panel": "shared", "clear": true }
+    },
+    {
+      "label": "Central: conferir e-mail",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["manage.py", "testar_email"],
+      "problemMatcher": [],
+      "presentation": { "panel": "shared", "clear": true }
+    },
+    {
+      "label": "Central: criar administrador",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["manage.py", "createsuperuser"],
+      "problemMatcher": [],
+      "presentation": { "focus": true, "panel": "dedicated", "clear": true }
+    }
+  ]
+}

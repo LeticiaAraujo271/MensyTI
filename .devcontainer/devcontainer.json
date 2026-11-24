@@ -1,18 +1,28 @@
 {
   // Central de TI no GitHub Codespaces: Code > Codespaces > Create codespace on main.
   // Na primeira vez o preparar.sh instala tudo e cria o administrador; depois o
-  // servidor liga sozinho e a tela abre no navegador (porta 8000).
+  // servidor liga sozinho e a tela abre no navegador.
+  // Uma porta por tela, cada uma com a sua linha na aba PORTS:
+  //   8000 = chat · 8001 = Painel da TI · 8002 = Administração
   "name": "Central de TI",
   "image": "mcr.microsoft.com/devcontainers/python:3.12",
   "postCreateCommand": "bash .devcontainer/preparar.sh",
   "postAttachCommand": {
     "servidor": "bash .devcontainer/ligar.sh"
   },
-  "forwardPorts": [8000],
+  "forwardPorts": [8000, 8001, 8002],
   "portsAttributes": {
     "8000": {
-      "label": "Central de TI",
+      "label": "Chat - Central de TI",
       "onAutoForward": "openBrowser"
+    },
+    "8001": {
+      "label": "Painel da TI",
+      "onAutoForward": "silent"
+    },
+    "8002": {
+      "label": "Administração",
+      "onAutoForward": "silent"
     }
   },
   "customizations": {

@@ -1,0 +1,23 @@
+{
+  // F5 (Run > Start Debugging): liga a Central com o depurador do VS Code.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Central de TI (runserver)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": ["runserver", "127.0.0.1:8000", "--noreload"],
+      "django": true,
+      "justMyCode": true
+    },
+    {
+      "name": "Central de TI (testes)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": ["test", "apps"],
+      "django": true
+    }
+  ]
+}

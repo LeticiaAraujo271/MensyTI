@@ -23,7 +23,11 @@ staticfiles/
 media/
 
 # Ferramentas e sistema
-.vscode/
+# VS Code: só as tarefas, a depuração e as extensões recomendadas vão para o GitHub
+.vscode/*
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 .idea/
 .coverage
 htmlcov/

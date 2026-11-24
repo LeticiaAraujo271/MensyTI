@@ -11,7 +11,7 @@ atende pelo **painel de TI**. Conversas e chamados ficam no mesmo banco, qualque
 O chat e o painel têm um fundo em marca d'água (roçadeira e trator de roçada) em
 [apps/portal/static/marca/](apps/portal/static/marca/). Para incluir o **logo oficial da Mensori**,
 coloque o arquivo como `logo.svg` ou `logo.png` nessa pasta e religue a Central
-(`instalar_servico.ps1 -Reiniciar`): ele aparece no topo do chat, na barra do painel e clarinho no fundo.
+(tarefa do VS Code "Central: segundo plano - reiniciar" ou `python manage.py servico reiniciar`): ele aparece no topo do chat, na barra do painel e clarinho no fundo.
 
 | Endereço | Para quem |
 |---|---|
@@ -23,7 +23,7 @@ coloque o arquivo como `logo.svg` ou `logo.png` nessa pasta e religue a Central
 
 Os endereços acima são relativos ao computador onde a Central roda (ex.: `http://127.0.0.1:8000/`
 nele mesmo). Para os colegas acessarem pela rede, veja o passo
-[8. Acesso dos colegas pela rede](#8-acesso-dos-colegas-pela-rede).
+[6. Acesso dos colegas pela rede](#6-acesso-dos-colegas-pela-rede).
 
 ## Fluxo (BPMN)
 
@@ -65,7 +65,9 @@ apps/painel/                  Painel dos analistas (login + permissão)
 apps/digisac/                 Cliente da API e webhook do provedor de WhatsApp
 apps/portal/static/marca/     Marca d'água do chat e do painel (roçadeira, trator) e lugar do logo oficial
 servir.py                     Servidor Waitress (Windows) usado pela tarefa em segundo plano
-instalar_servico.ps1          Instala/controla a tarefa "Central de TI" (-Status, -Reiniciar, -Rede, -Remover)
+preparar.py                   Prepara o projeto: dependências, .env, banco, administrador
+apps/portal/management/       manage.py servico (segundo plano no Windows) e configurar_integracoes
+.vscode/                      Tarefas (Terminal > Run Task) e depuração (F5) do VS Code
 ```
 
 Modelos: `Colaborador`, `Conversa` (um atendimento por canal), `Mensagem` (colaborador, bot,
@@ -85,21 +87,25 @@ de qualquer lugar (inclusive fora da rede da empresa).
 1. Entre no GitHub com a conta que tem acesso ao repositório e clique no botão acima
    (ou, no repositório: **Code → Codespaces → Create codespace on main**).
 2. Na primeira vez, espere de 2 a 4 minutos: ele instala tudo, cria o banco e o administrador.
-3. A Central abre sozinha numa aba nova. Se não abrir: aba **PORTS** (embaixo) → linha
-   **Central de TI (8000)** → ícone do globo 🌐.
+3. O chat abre sozinho numa aba nova. Cada tela tem a **sua porta** na aba **PORTS** (embaixo):
+   clique no ícone do globo 🌐 da linha que quiser.
 4. O usuário e a senha do painel/admin ficam no arquivo **ACESSO_CODESPACE.txt**, que abre sozinho
-   no editor (usuário `admin`). Troque a senha em `/admin/` → Usuários.
+   no editor (usuário `admin`). Troque a senha em **Administração** → Usuários.
 
-| Endereço | Para quem |
-|---|---|
-| `https://<seu-codespace>-8000.app.github.dev/` | Chat |
-| `https://<seu-codespace>-8000.app.github.dev/painel/` | Painel de TI |
-| `https://<seu-codespace>-8000.app.github.dev/admin/` | Administração |
+| Porta (aba PORTS) | Tela | Endereço |
+|---|---|---|
+| **8000** · Chat - Central de TI | Chat do colaborador | `https://<seu-codespace>-8000.app.github.dev/` |
+| **8001** · Painel da TI | Painel dos analistas | `https://<seu-codespace>-8001.app.github.dev/` |
+| **8002** · Administração | Admin do Django | `https://<seu-codespace>-8002.app.github.dev/` |
 
-**Mostrar para outras pessoas:** por padrão o link só abre para você (logado no GitHub). Para
-outra pessoa abrir, na aba **PORTS**, clique com o botão direito na porta 8000 →
-**Port Visibility → Public** e envie o link. Qualquer pessoa com o link abre a tela; volte para
-**Private** quando terminar.
+As três portas são a mesma Central (mesmo banco): a 8001 e a 8002 só abrem direto no painel e na
+administração. Isso vem da configuração `SERVIDOR_ATALHOS=8001:/painel/,8002:/admin/`, que o
+Codespaces já coloca no `.env` dele. No seu Windows ela fica vazia e tudo continua na porta 8000.
+
+**Mostrar para outras pessoas:** por padrão os links só abrem para você (logado no GitHub). Para
+outra pessoa abrir, na aba **PORTS**, clique com o botão direito em cada porta que quiser mostrar
+(8000, 8001 e/ou 8002) → **Port Visibility → Public** e envie o link. Qualquer pessoa com o link
+abre a tela; volte para **Private** quando terminar.
 
 **Limites do Codespaces** (bom para testar e demonstrar, não para uso diário da empresa):
 
@@ -109,75 +115,56 @@ outra pessoa abrir, na aba **PORTS**, clique com o botão direito na porta 8000 
 - a conta gratuita do GitHub tem uma cota mensal de horas de uso;
 - o link muda se você criar outro codespace.
 
-Para a Central ficar no ar o tempo todo, use o computador da empresa (passos 7 e 8 abaixo) ou um
+Para a Central ficar no ar o tempo todo, use o computador da empresa (passos 5 e 6 abaixo) ou um
 servidor/nuvem (veja **Produção**).
 
-## Como rodar no Windows (passo a passo)
+## Como rodar no Windows (só Python, Django e VS Code)
+
+Não precisa de PowerShell: tudo é feito por comandos do Django (`python manage.py ...`), que
+funcionam em qualquer terminal, ou pelas **tarefas prontas do VS Code** (**Terminal → Run Task…**),
+que rodam o Python direto, sem passar por nenhum shell.
 
 ### Pré-requisitos
 
 - **Python 3.12 ou mais novo** (<https://www.python.org/downloads/>). Na instalação, marque
-  **"Add python.exe to PATH"**. Confira no PowerShell: `python --version`.
-- **Git** (<https://git-scm.com/download/win>). Confira: `git --version`.
-- Para testar o webhook do WhatsApp: **ngrok** (<https://ngrok.com/download>), opcional.
+  **"Add python.exe to PATH"**.
+- **VS Code** (<https://code.visualstudio.com/>) com a extensão **Python** (o VS Code sugere
+  sozinho ao abrir o projeto).
+- **Git** (<https://git-scm.com/download/win>), ou baixe o projeto pelo GitHub em **Code → Download ZIP**.
 
-Todos os comandos abaixo são para o **PowerShell**, rodados na pasta do projeto.
+### 1. Abrir o projeto no VS Code
 
-> **Jeito rápido:** depois de clonar (passo 1), rode
-> `powershell -ExecutionPolicy Bypass -File .\iniciar.ps1`. Na primeira vez o script cria o
-> ambiente, instala as dependências, cria o `.env` com uma chave secreta nova, prepara o banco, pede
-> o usuário administrador e liga o servidor. Nas próximas vezes, ele só liga o servidor.
-> Os passos 2 a 6 fazem a mesma coisa à mão.
+No VS Code: **Ctrl+Shift+P → "Git: Clone"** → cole `https://github.com/gz5n88ks84-glitch/MensyTI.git`
+→ escolha a pasta → **Open**. (Se baixou o ZIP: **File → Open Folder** na pasta descompactada.)
 
-### 1. Clonar o repositório
+### 2. Criar o ambiente do Python (venv)
 
-```powershell
-git clone https://github.com/gz5n88ks84-glitch/MensyTI.git
-cd MensyTI
-```
+**Ctrl+Shift+P → "Python: Create Environment" → Venv →** escolha o Python 3.12+ → marque
+**requirements.txt** → OK. O VS Code cria a pasta `.venv`, instala as dependências e passa a usar
+esse Python nas tarefas e no terminal.
 
-### 2. Criar e ativar o ambiente virtual (venv)
+> Sem o VS Code, no terminal: `python -m venv .venv` e, daí em diante, use
+> `.venv\Scripts\python.exe` no lugar de `python` (no Linux/macOS, `.venv/bin/python`).
 
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-```
+### 3. Preparar (primeira vez e depois de cada atualização)
 
-O começo da linha passa a mostrar `(.venv)`. Se aparecer o erro *"a execução de scripts foi
-desabilitada neste sistema"*, libere só para esta janela e ative de novo:
+**Terminal → Run Task… → "Central: preparar (primeira vez ou depois de atualizar)"**
+(ou, no terminal: `python preparar.py`). Ele:
 
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.venv\Scripts\Activate.ps1
-```
+1. instala/confere as dependências;
+2. cria o `.env` a partir do [.env.example](.env.example), com uma `DJANGO_SECRET_KEY` aleatória;
+3. prepara o banco (`migrate`), a base de conhecimento, os perfis da equipe e os arquivos estáticos;
+4. pede para criar o **administrador** (usuário, e-mail e senha), se ainda não há nenhum.
 
-> Toda vez que abrir um PowerShell novo, ative o venv de novo (`.venv\Scripts\Activate.ps1`)
-> antes de usar o `python manage.py`.
+Pode rodar de novo quantas vezes quiser: não apaga nem duplica nada.
 
-### 3. Instalar as dependências
-
-```powershell
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-### 4. Configurar o `.env`
-
-As configurações e os segredos (chave do Django, tokens do Digisac) ficam no arquivo `.env`, lido
-pelo [python-decouple](https://pypi.org/project/python-decouple/). Ele **não vai para o Git**; o
-repositório só tem o modelo [.env.example](.env.example), sem valores reais.
-
-```powershell
-Copy-Item .env.example .env
-python -c "import secrets; print(secrets.token_urlsafe(50))"
-```
-
-Abra o `.env` (`notepad .env`) e cole a chave gerada em `DJANGO_SECRET_KEY=`. Para rodar no seu
-computador, o resto pode ficar como está. Principais variáveis:
+As configurações e os segredos ficam no `.env`, lido pelo
+[python-decouple](https://pypi.org/project/python-decouple/). Ele **não vai para o Git**; o
+repositório só tem o modelo `.env.example`, sem valores reais. Principais variáveis:
 
 | Variável | Para que serve |
 |---|---|
-| `DJANGO_SECRET_KEY` | **Obrigatória.** Chave secreta do Django; sem ela o projeto não sobe |
+| `DJANGO_SECRET_KEY` | **Obrigatória.** Chave secreta do Django (o `preparar.py` gera) |
 | `DJANGO_DEBUG` | `true` no seu computador, `false` em produção |
 | `DJANGO_ALLOWED_HOSTS` | Endereços aceitos, separados por vírgula |
 | `WHATSAPP_ATIVO` | `true` liga o canal WhatsApp (Digisac); com `false` o webhook ignora as mensagens |
@@ -185,86 +172,68 @@ computador, o resto pode ficar como está. Principais variáveis:
 | `DIGISAC_WEBHOOK_TOKEN` | Segredo que o Digisac manda na URL do webhook |
 | `DIGISAC_ENVIAR_MENSAGENS` | `false` só registra as respostas no log, sem enviar ao WhatsApp |
 
-As demais estão comentadas no próprio `.env.example`. Uma variável definida no sistema
-(`$env:NOME = "valor"`) tem prioridade sobre o `.env`.
+As demais estão comentadas no próprio `.env.example`. Sem `DB_NAME`, o banco é o SQLite
+(`db.sqlite3`, na pasta do projeto e fora do Git).
 
-### 5. Criar o banco (migrate) e os dados iniciais
+### 4. Ligar para testar
 
-```powershell
-python manage.py migrate
-python manage.py popular_orientacoes   # base de conhecimento inicial
-python manage.py configurar_perfis     # grupos Analista de TI / Administrador de TI
-python manage.py createsuperuser       # seu usuário de administrador
-```
+**Terminal → Run Task… → "Central: ligar (desenvolvimento)"** (ou `python manage.py runserver`),
+ou **F5** para ligar com o depurador do VS Code. Abra:
 
-Sem `DB_NAME` no `.env`, o banco é o SQLite (`db.sqlite3`, criado na pasta do projeto e fora do Git).
+- <http://127.0.0.1:8000/>: chat
+- <http://127.0.0.1:8000/painel/>: Painel da TI
+- <http://127.0.0.1:8000/admin/>: administração
 
-### 6. Ligar o servidor (runserver)
+Para parar: **Ctrl+C** no terminal da tarefa (ou o quadrado vermelho do depurador).
 
-```powershell
-python manage.py runserver
-```
+> Assim, a Central só funciona enquanto o VS Code estiver aberto. Para ficar sempre no ar, use o passo 5.
 
-Abra <http://127.0.0.1:8000/> (chat), <http://127.0.0.1:8000/painel/> (equipe) e
-<http://127.0.0.1:8000/admin/> (administração). `Ctrl+C` para parar.
+### 5. Deixar a Central sempre ligada (segundo plano)
 
-No Linux/macOS, ative com `source .venv/bin/activate` e copie com `cp .env.example .env`.
+**Terminal → Run Task… → "Central: segundo plano - instalar"**
+(ou `python manage.py servico instalar`). Não precisa ser administrador.
 
-> O `runserver` só funciona enquanto a janela dele estiver aberta. Para a Central ficar sempre no
-> ar, use o passo 7.
-
-### 7. Deixar a Central sempre ligada (segundo plano)
-
-Para não depender de nenhuma janela, terminal ou editor aberto, instale a Central como tarefa do
-Windows (não precisa ser administrador):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\instalar_servico.ps1
-```
-
-O script prepara o projeto (como o `iniciar.ps1`) e cria a tarefa agendada **"Central de TI"**,
+O comando prepara o projeto e cria a tarefa **"Central de TI"** no Agendador de Tarefas do Windows,
 que roda o [servir.py](servir.py) com o servidor **Waitress**, sem janela. A partir daí:
 
 - a Central **liga sozinha sempre que você entra no Windows** e fica no ar até desligar o computador;
-- pode fechar o PowerShell, o VS Code e tudo mais: <http://127.0.0.1:8000/> continua funcionando;
+- pode fechar o VS Code e tudo mais: <http://127.0.0.1:8000/> continua funcionando;
 - se o servidor cair, o Windows tenta religar a cada minuto;
 - os registros ficam em `logs\servidor.log` (e erros de inicialização em `logs\saida.log`).
 
-| Comando (na pasta do projeto) | Para que serve |
-|---|---|
-| `powershell -ExecutionPolicy Bypass -File .\instalar_servico.ps1 -Status` | Mostra se a Central está no ar |
-| `powershell -ExecutionPolicy Bypass -File .\instalar_servico.ps1 -Reiniciar` | Religa; use depois de mudar o `.env` ou atualizar o código (`git pull`) |
-| `powershell -ExecutionPolicy Bypass -File .\instalar_servico.ps1 -Remover` | Desliga e tira da inicialização do Windows |
+| Tarefa do VS Code | Comando | Para que serve |
+|---|---|---|
+| Central: segundo plano - status | `python manage.py servico status` | Mostra se a Central está no ar |
+| Central: segundo plano - reiniciar | `python manage.py servico reiniciar` | Religa; use depois de mudar o `.env` ou atualizar o código |
+| Central: segundo plano - remover | `python manage.py servico remover` | Desliga e tira da inicialização do Windows |
 
-A tarefa também aparece no **Agendador de Tarefas** do Windows, com o nome "Central de TI".
-Enquanto ela estiver ativa, não rode o `runserver` na mesma porta: use `-Remover` antes ou escolha
-outra porta (`python manage.py runserver 8001`).
+Enquanto a tarefa estiver ativa, não use o "ligar (desenvolvimento)" na mesma porta: remova antes
+ou use outra porta (`python manage.py runserver 8001`).
 
-Para os colegas acessarem de outros computadores, veja o passo 8.
+### 6. Acesso dos colegas pela rede
 
-### 8. Acesso dos colegas pela rede
+Por padrão, só o computador onde a Central está instalada abre os endereços. Para os colegas usarem
+o chat e o painel pelo navegador deles, rode **uma vez**:
+**Terminal → Run Task… → "Central: liberar acesso pela rede"** (ou `python manage.py servico rede`).
 
-Por padrão, só o computador onde a Central está instalada abre os endereços
-(`SERVIDOR_HOST=127.0.0.1`). Para os colegas usarem o chat e o painel pelo navegador deles, rode
-**uma vez**, no computador da Central:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\instalar_servico.ps1 -Rede
-```
-
-O script:
+O comando:
 
 1. descobre o IP deste computador na rede da empresa (ex.: `192.168.0.50`) e o nome dele;
 2. ajusta o `.env`: `SERVIDOR_HOST=0.0.0.0`, coloca o IP e o nome em `DJANGO_ALLOWED_HOSTS`,
-   `DJANGO_DEBUG=false` (ninguém vê detalhes técnicos de erro) e `DJANGO_COOKIES_SEGUROS=false`
-   (o login do painel funciona em `http://` dentro da rede);
+   `DJANGO_DEBUG=false` (ninguém vê detalhes técnicos de erro), `DJANGO_COOKIES_SEGUROS=false`
+   (o login do painel funciona em `http://` dentro da rede) e `CENTRAL_URL` (links de aprovação);
 3. libera a porta 8000 no Firewall do Windows, só nas redes do domínio e privadas (nunca em Wi-Fi
-   público). O Windows pede permissão de administrador uma vez; se você não tiver, o script mostra
-   o comando para a equipe de TI rodar;
+   público). **Isso exige administrador.** Se o seu usuário não for, o comando mostra a linha
+   abaixo para quem tem acesso de administrador rodar no **Prompt de Comando como administrador**:
+
+   ```
+   netsh advfirewall firewall add rule name="Central de TI" dir=in action=allow protocol=TCP localport=8000 profile=domain,private
+   ```
+
 4. religa a Central e mostra os endereços para enviar aos colegas.
 
 **O que os colegas fazem:** nada para instalar. Basta abrir no navegador (Chrome, Edge, celular no
-Wi-Fi da empresa) o endereço que o script mostrou:
+Wi-Fi da empresa):
 
 | Para quem | Endereço (exemplo) |
 |---|---|
@@ -272,36 +241,50 @@ Wi-Fi da empresa) o endereço que o script mostrou:
 | Analistas de TI (painel) | `http://192.168.0.50:8000/painel/`, com o usuário criado no Admin (veja **Equipe de TI**) |
 | Administradores | `http://192.168.0.50:8000/admin/` |
 
-Para conferir se está tudo certo: `instalar_servico.ps1 -Status` neste computador e, em outro
-computador da rede, `Test-NetConnection 192.168.0.50 -Port 8000` (deve mostrar
-`TcpTestSucceeded : True`).
-
 Se não abrir no computador do colega:
 
 | Sintoma | O que fazer |
 |---|---|
-| "Não é possível acessar esse site" / demora e dá erro | A Central está desligada (`-Status`), o firewall não foi liberado (rode `-Rede` de novo) ou o colega não está na mesma rede/VPN |
-| "Bad Request (400)" | O endereço usado não está em `DJANGO_ALLOWED_HOSTS`: rode `-Rede` de novo (ele acrescenta o IP atual) |
-| Funcionava e parou depois de alguns dias | O IP deste computador mudou. Rode `-Rede` de novo e mande o endereço novo, ou use o endereço pelo nome do computador. Para não mudar mais, peça à equipe de redes um **IP fixo** (reserva no DHCP) para esta máquina |
-| O login do painel volta para a tela de login | Confira `DJANGO_COOKIES_SEGUROS=false` no `.env` e rode `-Reiniciar` |
+| "Não é possível acessar esse site" / demora e dá erro | A Central está desligada (tarefa "status"), o firewall não foi liberado (item 3) ou o colega não está na mesma rede/VPN |
+| "Bad Request (400)" | O endereço usado não está em `DJANGO_ALLOWED_HOSTS`: rode "liberar acesso pela rede" de novo (ele acrescenta o IP atual) |
+| Funcionava e parou depois de alguns dias | O IP deste computador mudou. Rode "liberar acesso pela rede" de novo, ou use o endereço pelo nome do computador. Para não mudar mais, peça à equipe de redes um **IP fixo** (reserva no DHCP) |
+| O login do painel volta para a tela de login | Confira `DJANGO_COOKIES_SEGUROS=false` no `.env` e reinicie |
 
-Para voltar a ser só local: no `.env`, `SERVIDOR_HOST=127.0.0.1`, e rode `-Reiniciar`.
+Para voltar a ser só local: no `.env`, `SERVIDOR_HOST=127.0.0.1`, e reinicie.
 
 > A Central só fica disponível enquanto este computador estiver ligado e com o usuário conectado
-> no Windows. Para funcionar 24 horas, sem depender de um computador pessoal, publique em um
-> servidor da empresa ou na nuvem (veja **Produção**).
+> no Windows. Para funcionar 24 horas, publique em um servidor da empresa ou na nuvem (veja **Produção**).
+
+### Tarefas do VS Code
+
+Todas em **Terminal → Run Task…**. Rodam o Python escolhido no VS Code (o do `.venv`), sem PowerShell.
+
+| Tarefa | O que faz |
+|---|---|
+| Central: preparar | Dependências, `.env`, banco, base de conhecimento, administrador |
+| Central: ligar (desenvolvimento) | `runserver` em <http://127.0.0.1:8000/> |
+| Central: ligar como servidor (Waitress) | O mesmo servidor do segundo plano, com o log na tela |
+| Central: testes | `manage.py test apps` (também em **Terminal → Run Test Task**) |
+| Central: segundo plano - instalar / status / reiniciar / remover | Central sempre ligada no Windows |
+| Central: liberar acesso pela rede | Acesso dos colegas (passo 6) |
+| Central: configurar WhatsApp e e-mail | Pergunta os dados e grava no `.env` (senhas ocultas) |
+| Central: conferir WhatsApp (Digisac) / conferir e-mail | Confere a configuração sem enviar nada |
+| Central: criar administrador | `createsuperuser` |
+
+**F5** liga a Central com o depurador (pontos de parada no código); há também a configuração
+"Central de TI (testes)".
 
 ### Problemas comuns
 
 | Mensagem | O que fazer |
 |---|---|
+| A tarefa diz que o Python não é o do ambiente virtual | **Ctrl+Shift+P → "Python: Select Interpreter"** e escolha o que tem `.venv` (passo 2) |
 | `'python' não é reconhecido...` | Reinstale o Python marcando "Add python.exe to PATH", ou use `py` no lugar de `python` |
-| `a execução de scripts foi desabilitada` | `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` |
-| `No module named 'decouple'` (ou `'django'`) | O venv não está ativo: `.venv\Scripts\Activate.ps1` e `pip install -r requirements.txt` |
-| `DJANGO_SECRET_KEY não definida` | Falta o `.env` ou a chave nele (passo 4) |
+| `No module named 'decouple'` (ou `'django'`) | O VS Code está usando outro Python: selecione o do `.venv` e rode a tarefa "preparar" |
+| `DJANGO_SECRET_KEY não definida` | Falta o `.env`: rode a tarefa "preparar" |
 | `Invalid HTTP_HOST header` | Acrescente o endereço em `DJANGO_ALLOWED_HOSTS` no `.env` |
-| `That port is already in use` | A tarefa "Central de TI" já está usando a 8000 (veja `-Status`), ou use outra porta: `python manage.py runserver 8001` |
-| O link não abre ("não é possível acessar esse site") | O servidor está desligado: rode `instalar_servico.ps1 -Status` e, se preciso, `-Reiniciar` ou o passo 7 |
+| `That port is already in use` | A Central em segundo plano já está usando a 8000 (tarefa "status"), ou use outra porta: `python manage.py runserver 8001` |
+| O link não abre ("não é possível acessar esse site") | O servidor está desligado: tarefa "status" e, se preciso, "reiniciar" ou "instalar" |
 
 ### Equipe de TI
 
@@ -311,9 +294,7 @@ marque também "Membro da equipe".
 
 ### Testes
 
-```powershell
-python manage.py test apps
-```
+**Terminal → Run Task… → "Central: testes"** (ou `python manage.py test apps`).
 
 Cobrem os ramos resolvido e não resolvido, incidente crítico, fora do horário (sem perder
 mensagens), texto livre, falha e desligamento do WhatsApp, webhook e clique duplicados, isolamento
@@ -488,7 +469,8 @@ Colaborador pede  →  1. Coordenador aprova  →  2. Gerente da área aprova  �
     `EMAIL_REMETENTE` e `CENTRAL_URL`), ele vai **por e-mail**, automaticamente;
   - sem e-mail configurado, a TI abre o chamado no painel, clica em **Copiar link** e envia pelo
     Teams ou pelo e-mail dela.
-  - para configurar o e-mail, rode `powershell -ExecutionPolicy Bypass -File .\configurar_integracoes.ps1 -SoEmail`:
+  - para configurar o e-mail, use a tarefa do VS Code **"Central: configurar WhatsApp e e-mail"**
+    (ou `python manage.py configurar_integracoes --so-email`):
     o script pede os dados no terminal (a senha fica oculta), grava no `.env`, manda um e-mail de
     teste e reinicia a Central. Para só conferir: `python manage.py testar_email`.
 - Se o aprovador responder por outro meio (ex.: "aprovado" num e-mail), a TI registra no painel em
@@ -529,7 +511,8 @@ O que é preciso:
 | `DIGISAC_SERVICE_ID` (opcional) | ID da conexão de WhatsApp que o bot vai usar |
 | Endereço público com **HTTPS** | Para o Digisac entregar as mensagens: servidor da empresa, Codespaces (porta pública) ou ngrok (só para teste) |
 
-**Jeito mais fácil:** `powershell -ExecutionPolicy Bypass -File .\configurar_integracoes.ps1 -SoWhatsApp`.
+**Jeito mais fácil:** tarefa do VS Code **"Central: configurar WhatsApp e e-mail"** (ou
+`python manage.py configurar_integracoes --so-whatsapp`).
 O script pede o endereço, o token (oculto) e os IDs, gera o segredo do webhook, confere com o
 `testar_digisac`, pergunta se liga o WhatsApp, mostra a URL para cadastrar no Digisac e reinicia a
 Central. Sem o parâmetro, ele configura o WhatsApp e o e-mail de uma vez.
@@ -542,7 +525,7 @@ Passo a passo manual:
 2. Confira: `python manage.py testar_digisac`. Ele mostra o que falta (`[FALTA]`) e a URL do webhook.
 3. No Digisac, cadastre o webhook `https://SEU_ENDERECO/webhooks/digisac/?token=SEU_TOKEN` com o
    evento `message.created`, e **desative o robô nativo** do Digisac nessa conexão.
-4. Reinicie a Central (`instalar_servico.ps1 -Reiniciar`) e mande um "oi" para o número da conexão.
+4. Reinicie a Central (tarefa "Central: segundo plano - reiniciar") e mande um "oi" para o número da conexão.
    A conversa aparece no Admin, em **Conversas**, e o que o bot responderia aparece em
    `logs\servidor.log` (`[simulação] POST /api/v1/messages`).
 5. Teste real de envio para um contato: `python manage.py testar_digisac --enviar-para ID_DO_CONTATO`
@@ -559,13 +542,13 @@ túnel da internet até o seu `runserver`.
 
 1. Instale o ngrok, crie uma conta gratuita em <https://ngrok.com> e configure o seu token (uma vez só):
 
-   ```powershell
+   ```
    ngrok config add-authtoken SEU_TOKEN_DO_NGROK
    ```
 
 2. Gere um segredo para o webhook:
 
-   ```powershell
+   ```
    python -c "import secrets; print(secrets.token_urlsafe(32))"
    ```
 
@@ -581,29 +564,23 @@ túnel da internet até o seu `runserver`.
    Com `DIGISAC_ENVIAR_MENSAGENS=false` o bot só registra no log o que responderia: dá para testar
    sem mandar nada para o WhatsApp de ninguém.
 
-3. Em um PowerShell (com o venv ativo), ligue o servidor: `python manage.py runserver 8000`.
-   Em **outro** PowerShell, abra o túnel:
+3. Ligue o servidor (tarefa **"Central: ligar (desenvolvimento)"**). Em um terminal do VS Code
+   (**Terminal → New Terminal**), abra o túnel:
 
-   ```powershell
+   ```
    ngrok http 8000
    ```
 
    O ngrok mostra um endereço como `https://abcd-1234.ngrok-free.app` (no plano gratuito ele muda
    cada vez que o ngrok é aberto). Em <http://127.0.0.1:4040> dá para ver cada requisição que chegou.
 
-4. Simule uma mensagem do Digisac (troque o endereço e o segredo):
+4. Simule uma mensagem do Digisac (troque o endereço e o segredo), em qualquer terminal do VS Code:
 
-   ```powershell
-   $url = "https://abcd-1234.ngrok-free.app/webhooks/digisac/?token=SEU_SEGREDO"
-   $corpo = @{
-       event = "message.created"
-       data  = @{ id = "teste-1"; contactId = "contato-teste"; type = "chat"; text = "oi";
-                  isFromMe = $false; isFromBot = $false }
-   } | ConvertTo-Json -Depth 5
-   Invoke-RestMethod -Method Post -Uri $url -ContentType "application/json; charset=utf-8" -Body $corpo
+   ```
+   python -c "import requests; print(requests.post('https://abcd-1234.ngrok-free.app/webhooks/digisac/?token=SEU_SEGREDO', json={'event': 'message.created', 'data': {'id': 'teste-1', 'contactId': 'contato-teste', 'type': 'chat', 'text': 'oi', 'isFromMe': False, 'isFromBot': False}}).json())"
    ```
 
-   Resposta esperada: `ok: True` e `processadas: 1`. A resposta do bot aparece no terminal do
+   Resposta esperada: `'ok': True` e `'processadas': 1`. A resposta do bot aparece no terminal do
    `runserver`, e a conversa fica no Admin, em **Conversas**. Para conferir a proteção, repita com
    um token errado: a resposta deve ser **403 (token inválido)**. Se vier
    `ignorado: canal WhatsApp desativado`, falta `WHATSAPP_ATIVO=true` (reinicie o `runserver`
@@ -634,7 +611,7 @@ túnel da internet até o seu `runserver`.
   `DJANGO_CSRF_TRUSTED_ORIGINS` com o domínio, e HTTPS obrigatório.
 - PostgreSQL: preencha `DB_NAME` etc.
 - Arquivos estáticos: já são entregues pelo WhiteNoise (CSS/JS do chat, do painel e do Admin).
-- Windows: `python servir.py` (Waitress) ou o `instalar_servico.ps1`; Linux: `gunicorn config.wsgi`.
+- Windows: `python servir.py` (Waitress) ou `python manage.py servico instalar`; Linux: `gunicorn config.wsgi`.
 - Com `DJANGO_DEBUG=false` os cookies de login passam a exigir HTTPS. Se for usar `false` em
   `http://` (ex.: só na rede interna), coloque também `DJANGO_COOKIES_SEGUROS=false`, senão o login
   do painel não funciona.

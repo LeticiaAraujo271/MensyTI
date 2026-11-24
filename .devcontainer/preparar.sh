@@ -22,6 +22,8 @@ valores = {
     "DJANGO_ALLOWED_HOSTS": "localhost,127.0.0.1,.app.github.dev",
     "DJANGO_CSRF_TRUSTED_ORIGINS": "https://*.app.github.dev",
     "SERVIDOR_HOST": "0.0.0.0",
+    # Uma porta por tela na aba PORTS: 8001 = Painel da TI, 8002 = Administração
+    "SERVIDOR_ATALHOS": "8001:/painel/,8002:/admin/",
 }
 linhas = []
 for linha in p.read_text(encoding="utf-8").splitlines():
@@ -47,12 +49,15 @@ if [ ! -f ACESSO_CODESPACE.txt ]; then
 Central de TI no GitHub Codespaces
 ==================================
 
-A tela abre sozinha numa aba nova do navegador. Se não abrir: aba "PORTS"
-(aqui embaixo) > linha "Central de TI (8000)" > clique no ícone do globo.
+O chat abre sozinho numa aba nova do navegador. Cada tela tem a sua porta
+na aba "PORTS" (aqui embaixo): clique no ícone do globo da linha desejada.
 
-  Chat:          (endereço da porta 8000)/
-  Painel de TI:  (endereço da porta 8000)/painel/
-  Administração: (endereço da porta 8000)/admin/
+  Chat:            porta 8000  (Chat - Central de TI)
+  Painel da TI:    porta 8001  (Painel da TI)
+  Administração:   porta 8002  (Administração)
+
+Para outra pessoa abrir: botão direito na porta > Port Visibility > Public
+(faça nas três portas) e envie o link. Volte para Private quando terminar.
 
 Login do painel e da administração:
   Usuário: admin

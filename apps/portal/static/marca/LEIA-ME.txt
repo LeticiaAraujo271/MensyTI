@@ -7,7 +7,7 @@ logo.svg / logo.png / logo.webp
                    Coloque AQUI o arquivo OFICIAL do logo da Mensori (fornecido pelo
                    Marketing), com um destes nomes. Ele aparece sozinho, sem mexer no
                    código: no topo do chat, na barra do painel e bem clarinho no fundo.
-                   Depois de colocar, religue a Central (instalar_servico.ps1 -Reiniciar).
+                   Depois de colocar, religue a Central (python manage.py servico reiniciar).
 
 A intensidade do fundo fica nas variáveis --marca-dagua e --logo-dagua, no começo de
 portal/chat.css e painel/painel.css.

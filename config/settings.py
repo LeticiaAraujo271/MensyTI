@@ -43,6 +43,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",  # arquivos estáticos (CSS/JS) no Waitress
+    "apps.portal.atalhos.AtalhoPorPorta",  # uma porta por tela (SERVIDOR_ATALHOS), usado no Codespaces
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -50,6 +51,9 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# Portas extras que abrem direto numa tela (ex.: no Codespaces, 8001 = painel e 8002 = admin).
+SERVIDOR_ATALHOS = env("SERVIDOR_ATALHOS", default="")
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"

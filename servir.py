@@ -2,12 +2,14 @@
 Liga a Central de TI com o Waitress (servidor de produção que funciona no Windows).
 
 Diferente do `manage.py runserver`, roda sem janela aberta: é o que a tarefa agendada
-criada por `instalar_servico.ps1` executa (com pythonw.exe) sempre que você entra no Windows.
+criada por `python manage.py servico instalar` executa (com pythonw.exe) sempre que você entra no Windows.
 
-Uso manual:  .venv\\Scripts\\python.exe servir.py
+Uso manual:  python servir.py   (com o Python do .venv; no VS Code: tarefa "Central: ligar como servidor")
 Endereço e porta: SERVIDOR_HOST e SERVIDOR_PORTA no .env (padrão 127.0.0.1:8000).
+Portas extras por tela (opcional): SERVIDOR_ATALHOS=8001:/painel/,8002:/admin/
 O log fica em logs\\servidor.log.
 """
+import atexit
 import logging
 import os
 import sys
@@ -44,8 +46,20 @@ def main() -> None:
     porta = env("SERVIDOR_PORTA", default=8000, cast=int)
 
     app = get_wsgi_application()
-    logging.getLogger("servir").info("Central de TI no ar em http://%s:%s/", host, porta)
-    serve(app, host=host, port=porta, threads=8, ident="CentralTI")
+    from apps.portal.atalhos import ler_atalhos
+
+    log = logging.getLogger("servir")
+    # Portas extras que abrem direto numa tela (SERVIDOR_ATALHOS, ex.: 8001:/painel/,8002:/admin/)
+    atalhos = {p: c for p, c in ler_atalhos(env("SERVIDOR_ATALHOS", default="")).items() if p != porta}
+    log.info("Central de TI no ar em http://%s:%s/", host, porta)
+    for p, caminho in atalhos.items():
+        log.info("  atalho: http://%s:%s/ abre %s", host, p, caminho)
+    portas = [porta, *atalhos]
+    # PID para o "manage.py servico" saber qual processo parar ao reiniciar.
+    arquivo_pid = BASE_DIR / "logs" / "servidor.pid"
+    arquivo_pid.write_text(str(os.getpid()))
+    atexit.register(lambda: arquivo_pid.unlink(missing_ok=True))
+    serve(app, listen=" ".join(f"{host}:{p}" for p in portas), threads=8, ident="CentralTI")
 
 
 if __name__ == "__main__":
