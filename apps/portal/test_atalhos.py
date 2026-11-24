@@ -31,3 +31,15 @@ class AtalhoPorPorta(TestCase):
 class SemAtalhos(TestCase):
     def test_desligado_por_padrao(self):
         self.assertEqual(self.client.get("/", SERVER_PORT="8001").status_code, 200)
+
+
+class FalhaCsrf(TestCase):
+    def test_mostra_o_motivo_em_portugues(self):
+        from django.test import Client
+
+        cliente = Client(enforce_csrf_checks=True)
+        r = cliente.post("/painel/login/", {"username": "x", "password": "y"})
+        self.assertEqual(r.status_code, 403)
+        self.assertContains(r, "Envio recusado", status_code=403)
+        self.assertContains(r, "CSRF cookie not set", status_code=403)
+        self.assertContains(r, "Recarregue a página", status_code=403)

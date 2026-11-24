@@ -23,6 +23,8 @@ if not SECRET_KEY:
 DEBUG = env("DJANGO_DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = env("DJANGO_ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
 CSRF_TRUSTED_ORIGINS = env("DJANGO_CSRF_TRUSTED_ORIGINS", default="", cast=Csv())
+# Falha de CSRF em português, com o motivo e o que fazer (e registrada em logs/servidor.log).
+CSRF_FAILURE_VIEW = "apps.portal.erros.falha_csrf"
 
 INSTALLED_APPS = [
     "django.contrib.admin",
