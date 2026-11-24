@@ -13,8 +13,9 @@ class MensagemInline(admin.TabularInline):
 
 @admin.register(Colaborador)
 class ColaboradorAdmin(admin.ModelAdmin):
-    list_display = ("nome", "setor", "email", "matricula", "atualizado_em")
-    search_fields = ("nome", "email", "matricula", "setor")
+    list_display = ("nome", "setor", "centro_custo", "email", "matricula", "atualizado_em")
+    list_filter = ("setor", "centro_custo")
+    search_fields = ("nome", "email", "matricula", "setor", "centro_custo")
 
 
 @admin.register(Conversa)

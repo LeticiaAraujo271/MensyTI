@@ -16,7 +16,7 @@
 
 <form class="filtros" method="get">
   <input type="hidden" name="status" value="{{ status }}">
-  <input type="search" name="q" value="{{ busca }}" placeholder="Protocolo, nome, e-mail ou descrição">
+  <input type="search" name="q" value="{{ busca }}" placeholder="Protocolo, nome, e-mail, centro de custo ou descrição">
   <select name="prioridade">
     <option value="">Todas as prioridades</option>
     {% for v, n in opcoes_prioridade %}<option value="{{ v }}" {% if prioridade == v|stringformat:"s" %}selected{% endif %}>{{ n }}</option>{% endfor %}
@@ -34,7 +34,7 @@
 <div class="tabela-rolagem">
 <table class="tabela">
   <thead>
-    <tr><th>Protocolo</th><th>SLA</th><th>Prioridade</th><th>Colaborador</th><th>Assunto</th><th>Status</th><th>Responsável</th><th>Canal</th><th>Aberto em</th></tr>
+    <tr><th>Protocolo</th><th>SLA</th><th>Prioridade</th><th>Colaborador</th><th>Centro de custo</th><th>Assunto</th><th>Status</th><th>Responsável</th><th>Canal</th><th>Aberto em</th></tr>
   </thead>
   <tbody>
   {% for c in chamados %}
@@ -43,6 +43,7 @@
       <td>{% include "painel/_sla.html" with s=c.sla %}</td>
       <td><span class="selo p{{ c.prioridade }}">{{ c.get_prioridade_display }}</span></td>
       <td>{{ c.nome_colaborador }}<br><small>{{ c.setor }}</small></td>
+      <td>{{ c.centro_custo|default:"—" }}</td>
       <td>{{ c.categoria|default:"—" }}<br><small>{{ c.descricao|truncatechars:70 }}</small></td>
       <td><span class="status {{ c.status }}">{{ c.get_status_display }}</span>{% if c.fora_do_horario %}<br><small>🕒 fora do horário</small>{% endif %}</td>
       <td>{{ c.responsavel.get_username|default:"—" }}{% with p=c.pesquisas.all.0 %}{% if p %}<br><small title="Pesquisa de satisfação">{% include "painel/_pesquisa_emoji.html" %} {{ p.get_resposta_display }}</small>{% endif %}{% endwith %}</td>
@@ -50,7 +51,7 @@
       <td>{{ c.criado_em|date:"d/m H:i" }}</td>
     </tr>
   {% empty %}
-    <tr><td colspan="9" class="vazio">Nenhum chamado aqui. 🎉</td></tr>
+    <tr><td colspan="10" class="vazio">Nenhum chamado aqui. 🎉</td></tr>
   {% endfor %}
   </tbody>
 </table>

@@ -13,10 +13,10 @@ class EventoInline(admin.TabularInline):
 
 @admin.register(Chamado)
 class ChamadoAdmin(admin.ModelAdmin):
-    list_display = ("protocolo", "nome_colaborador", "setor", "categoria", "prioridade", "status",
+    list_display = ("protocolo", "nome_colaborador", "setor", "centro_custo", "categoria", "prioridade", "status",
                     "situacao_sla", "responsavel", "canal", "fora_do_horario", "criado_em")
-    list_filter = ("status", "prioridade", "canal", "fora_do_horario", "categoria", "criado_em")
-    search_fields = ("protocolo", "nome_colaborador", "contato", "setor", "descricao", "resumo")
+    list_filter = ("status", "prioridade", "canal", "fora_do_horario", "categoria", "centro_custo", "criado_em")
+    search_fields = ("protocolo", "nome_colaborador", "contato", "setor", "centro_custo", "descricao", "resumo")
     readonly_fields = ("protocolo", "conversa", "colaborador", "canal", "resumo", "criado_em",
                        "atualizado_em", "resolvido_em", "sla_horas", "prazo_sla")
     inlines = [EventoInline]

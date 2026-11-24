@@ -141,6 +141,8 @@ class PainelTest(TestCase):
         self.assertEqual(linha["Status"], "Em fila")
         self.assertEqual(linha["SLA"], "No prazo")
         self.assertEqual(linha["Canal"], "Portal web")
+        self.assertIn("Centro de custo", cab)
+        self.assertEqual(cab.index("Centro de custo"), cab.index("Colaborador") + 1)
         self.assertEqual(linha["Pesquisa de satisfação"], "Insatisfeito")
         self.assertEqual(linha["Observação da pesquisa"], "Demorou muito")
         self.assertIsNone(linha["Data do fechamento"])
@@ -155,3 +157,10 @@ class PainelTest(TestCase):
         self.client.login(username="ana", password="senha-forte-123")
         ws = load_workbook(BytesIO(self.client.get("/painel/exportar.xlsx?status=fechado").content)).active
         self.assertEqual(ws.max_row, 1)  # só o cabeçalho: nenhum chamado fechado
+
+    def test_painel_mostra_centro_de_custo(self):
+        Chamado.objects.update(centro_custo="1105 - Financeiro")
+        self.client.login(username="ana", password="senha-forte-123")
+        self.assertContains(self.client.get("/painel/"), "1105 - Financeiro")
+        self.assertContains(self.client.get("/painel/?q=1105&status=todos"), self.chamado.protocolo)
+        self.assertContains(self.client.get(self.url), "Centro de custo")

@@ -14,6 +14,7 @@ from apps.chamados import sla
 COLUNAS = (
     ("Número do chamado", 18),
     ("Colaborador", 26),
+    ("Centro de custo", 20),
     ("Assunto", 28),
     ("Status", 22),
     ("SLA", 12),
@@ -34,6 +35,12 @@ CORES_SLA = {
     sla.VERMELHO: ("FEE4E2", "B42318"),
 }
 FORMATO_DATA = "dd/mm/yyyy hh:mm"
+COLUNAS_DATA = {"Prazo do SLA", "Aberto em", "Data do fechamento"}
+COLUNAS_QUEBRA = {"Assunto", "Observação da pesquisa"}  # textos longos quebram a linha
+
+
+def _coluna(titulo: str) -> int:
+    return next(i for i, (t, _) in enumerate(COLUNAS, start=1) if t == titulo)
 
 
 def _data(valor):
@@ -70,6 +77,7 @@ def planilha_chamados(chamados) -> bytes:
         valores = (
             ch.protocolo or "",
             ch.nome_colaborador,
+            ch.centro_custo,
             ch.categoria or "Sem categoria",
             ch.get_status_display(),
             s.rotulo,
@@ -83,17 +91,17 @@ def planilha_chamados(chamados) -> bytes:
             pesquisa.get_resposta_display() if pesquisa else "",
             pesquisa.observacao if pesquisa else "",
         )
-        for col, valor in enumerate(valores, start=1):
+        for (titulo, _), col, valor in zip(COLUNAS, range(1, len(COLUNAS) + 1), valores):
             c = ws.cell(row=linha, column=col)
             if isinstance(valor, str):
                 _texto(c, valor)
             else:
                 c.value = valor
-            if col in (8, 11, 12):
+            if titulo in COLUNAS_DATA:
                 c.number_format = FORMATO_DATA
-            c.alignment = Alignment(vertical="top", wrap_text=col in (3, 14))
+            c.alignment = Alignment(vertical="top", wrap_text=titulo in COLUNAS_QUEBRA)
         fundo, fonte = CORES_SLA[s.cor]
-        celula_sla = ws.cell(row=linha, column=5)
+        celula_sla = ws.cell(row=linha, column=_coluna("SLA"))
         celula_sla.fill = PatternFill("solid", fgColor=fundo)
         celula_sla.font = Font(bold=True, color=fonte)
 

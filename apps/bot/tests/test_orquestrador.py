@@ -232,3 +232,22 @@ class OrquestradorTest(TestCase):
         antiga = Conversa.objects.filter(identificador="u1").order_by("criada_em").first()
         self.assertEqual(antiga.resultado, Conversa.Resultado.EXPIRADA)
         self.assertIn("Olá, Maria", respostas[0])
+
+
+CENTRAL_CC = {**CENTRAL_TESTE, "IDENTIFICACAO": ["nome", "setor", "centro_custo", "email"]}
+
+
+@override_settings(CENTRAL=CENTRAL_CC, WHATSAPP_ATIVO=False)
+class CentroDeCustoTest(TestCase):
+    def setUp(self):
+        call_command("popular_orientacoes", verbosity=0)
+        self.orq = ConversationOrchestrator(WebChannel(), horario=HorarioFixo(True))
+
+    def test_chamado_guarda_o_centro_de_custo_separado(self):
+        for t in ("oi", "Maria Silva", "Financeiro", "1105 - Financeiro", "maria@empresa.com.br",
+                  "0", "Preciso de ajuda com o ERP"):
+            self.orq.receber("u1", t)
+        ch = Chamado.objects.get()
+        self.assertEqual((ch.nome_colaborador, ch.centro_custo), ("Maria Silva", "1105 - Financeiro"))
+        self.assertIn("Centro de custo: 1105 - Financeiro", ch.resumo)
+        self.assertEqual(Colaborador.objects.get().centro_custo, "1105 - Financeiro")

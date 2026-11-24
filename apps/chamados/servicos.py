@@ -56,6 +56,7 @@ class TicketService:
             canal=conversa.canal,
             nome_colaborador=dados.get("nome", "")[:150],
             setor=dados.get("setor", "")[:100],
+            centro_custo=dados.get("centro_custo", "")[:60],
             contato=(dados.get("email") or dados.get("matricula") or "")[:150],
             categoria=categoria[:80],
             orientacao=orientacao[:120],

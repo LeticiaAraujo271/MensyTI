@@ -31,6 +31,7 @@ class Chamado(models.Model):
     # Cópia dos dados no momento da abertura (o colaborador não precisa repetir nada)
     nome_colaborador = models.CharField("colaborador", max_length=150, blank=True)
     setor = models.CharField(max_length=100, blank=True)
+    centro_custo = models.CharField("centro de custo", max_length=60, blank=True, db_index=True)
     contato = models.CharField(max_length=150, blank=True, help_text="E-mail corporativo ou matrícula.")
 
     categoria = models.CharField(max_length=80, blank=True)

@@ -205,6 +205,7 @@ def buscar_orientacoes(catalogo: list[dict], texto: str, limite: int = 3) -> lis
 PERGUNTAS = {
     "nome": "Para começar, qual é o seu *nome completo*?",
     "setor": "Em qual *setor/departamento* você trabalha?",
+    "centro_custo": "Qual é o seu *centro de custo*? (o código ou o nome, ex.: _1105_ ou _1105 - Financeiro_)",
     "email": "Qual é o seu *e-mail corporativo*?",
     "matricula": "Qual é a sua *matrícula*?",
 }
@@ -230,6 +231,11 @@ def validar_campo(campo: str, texto: str, ctx: Contexto) -> tuple[str | None, st
         if ctx.dominios_email and not any(dominio == d or dominio.endswith("." + d) for d in ctx.dominios_email):
             aceitos = ", ".join("@" + d for d in ctx.dominios_email)
             return None, f"Use o seu e-mail *corporativo* ({aceitos})."
+        return valor, ""
+    if campo == "centro_custo":
+        if not (2 <= len(valor) <= 60) or not any(c.isalnum() for c in valor):
+            return None, ("Não entendi 🤔 Digite o seu *centro de custo* (o código ou o nome). "
+                          "Se não souber, pergunte ao seu gestor.")
         return valor, ""
     if campo == "matricula":
         valor = valor.upper()
@@ -360,6 +366,12 @@ def _saudacao(estado: Estado, ctx: Contexto) -> Resultado:
     campo = _campo_faltante(estado, ctx)
     estado.etapa = IDENTIFICACAO
     estado.dados["campo"] = campo
+    if estado.dados.get("nome"):
+        return Resultado(estado, [
+            f"Olá, {_primeiro_nome(estado.dados)}! 👋 Aqui é o assistente da *{ctx.nome_central}*.\n"
+            "Antes de continuar, preciso de mais uma informação.",
+            PERGUNTAS[campo],
+        ])
     return Resultado(estado, [
         f"Olá! 👋 Eu sou o assistente virtual da *{ctx.nome_central}*.\n"
         "Vou te passar as orientações padrão para os problemas mais comuns e, se não resolver, "
@@ -690,6 +702,8 @@ def _resumo(estado: Estado, ctx: Contexto, motivo: str, prioridade: str) -> str:
         f"Colaborador: {d.get('nome', '-')}",
         f"Setor: {d.get('setor', '-')}",
     ]
+    if d.get("centro_custo"):
+        linhas.append(f"Centro de custo: {d['centro_custo']}")
     if d.get("email"):
         linhas.append(f"E-mail: {d['email']}")
     if d.get("matricula"):

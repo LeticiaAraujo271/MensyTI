@@ -31,7 +31,7 @@ from .models import Avaliacao, Colaborador, Conversa, Mensagem, OrientacaoVista
 
 log = logging.getLogger(__name__)
 
-CAMPOS_IDENTIFICACAO = ("nome", "setor", "email", "matricula")
+CAMPOS_IDENTIFICACAO = ("nome", "setor", "centro_custo", "email", "matricula")
 
 ETAPAS_PESQUISA = (engine.PESQUISA, engine.PESQUISA_OBS)
 

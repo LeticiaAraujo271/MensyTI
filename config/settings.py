@@ -117,8 +117,8 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 # --------------------------------------------------------------------------
 CENTRAL = {
     "NOME": env("CENTRAL_NOME", default="Central de TI"),
-    # Campos pedidos na identificação, na ordem: nome, setor, email, matricula
-    "IDENTIFICACAO": env("CENTRAL_IDENTIFICACAO", default="nome,setor,email", cast=Csv()),
+    # Campos pedidos na identificação, na ordem: nome, setor, centro_custo, email, matricula
+    "IDENTIFICACAO": env("CENTRAL_IDENTIFICACAO", default="nome,setor,centro_custo,email", cast=Csv()),
     # Domínios aceitos no e-mail corporativo (vazio = qualquer). Ex.: empresa.com.br
     "DOMINIOS_EMAIL": env("CENTRAL_DOMINIOS_EMAIL", default="", cast=Csv(str.lower)),
     # Limite de mensagens por minuto por navegador (proteção contra abuso)

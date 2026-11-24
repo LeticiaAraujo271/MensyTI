@@ -54,7 +54,8 @@ def _filtrar(request, limite=300):
     busca = request.GET.get("q", "").strip()
     if busca:
         qs = qs.filter(Q(protocolo__icontains=busca) | Q(nome_colaborador__icontains=busca)
-                       | Q(contato__icontains=busca) | Q(descricao__icontains=busca))
+                       | Q(contato__icontains=busca) | Q(descricao__icontains=busca)
+                       | Q(centro_custo__icontains=busca))
     qs = qs.prefetch_related("pesquisas").order_by("prioridade", "criado_em")
     chamados = list(qs[:limite] if limite else qs)
     cor_sla = request.GET.get("sla", "")

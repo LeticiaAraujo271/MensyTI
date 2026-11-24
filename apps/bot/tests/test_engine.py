@@ -212,3 +212,29 @@ class DadosSensiveis(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CentroDeCusto(unittest.TestCase):
+    CTX_CC = e.Contexto(catalogo=CATALOGO_INICIAL, campos_identificacao=("nome", "setor", "centro_custo", "email"))
+
+    def test_pergunta_o_centro_de_custo_depois_do_setor(self):
+        estado, rs = conversa("oi", "Maria Silva", "Financeiro", "1105 - Financeiro", "maria@empresa.com.br",
+                              ctx=self.CTX_CC)
+        self.assertIn("centro de custo", rs[2].respostas[0])
+        self.assertEqual(estado.dados["centro_custo"], "1105 - Financeiro")
+        self.assertEqual(estado.dados["nome"], "Maria Silva")  # campos separados
+        self.assertEqual(estado.etapa, e.MENU)
+        ident = acao(rs[-1], e.ACAO_IDENTIFICADO).params
+        self.assertEqual(ident["centro_custo"], "1105 - Financeiro")
+
+    def test_centro_de_custo_invalido(self):
+        estado, rs = conversa("oi", "Maria Silva", "Financeiro", "?", ctx=self.CTX_CC)
+        self.assertIn("centro de custo", rs[-1].respostas[0])
+        self.assertEqual(estado.dados["campo"], "centro_custo")
+
+    def test_quem_ja_tinha_cadastro_so_informa_o_centro_de_custo(self):
+        antigo = e.Estado(e.INICIO, {"nome": "Maria Silva", "setor": "Financeiro", "email": "maria@empresa.com.br"})
+        estado, rs = conversa("oi", "2030", estado=antigo, ctx=self.CTX_CC)
+        self.assertIn("Olá, Maria", rs[0].respostas[0])
+        self.assertIn("centro de custo", rs[0].respostas[1])
+        self.assertEqual((estado.etapa, estado.dados["centro_custo"]), (e.MENU, "2030"))

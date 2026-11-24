@@ -27,7 +27,7 @@ nele mesmo). Para os colegas acessarem pela rede, veja o passo
 ## Fluxo (BPMN)
 
 ```
-identificação (nome, setor, e-mail)  ──▶ menu de categorias  ou  texto livre ("erro de acesso")
+identificação (nome, setor, centro de custo, e-mail) ──▶ menu de categorias  ou  texto livre ("erro de acesso")
         ──▶ orientação passo a passo ──▶ "Seu problema foi resolvido?"
               ├─ Sim ──▶ avaliação 1 a 5 ──▶ encerra (resolvido no autoatendimento)
               └─ Não ──▶ descrição ──▶ CHAMADO TI-AAAA-NNNNNN ──▶ dentro do horário? fila + analista
@@ -35,6 +35,11 @@ identificação (nome, setor, e-mail)  ──▶ menu de categorias  ou  texto l
 incidente crítico/segurança ──▶ avisos seguros ──▶ chamado com prioridade CRÍTICA na hora
 ```
 
+- Identificação: nome, setor, **centro de custo** e e-mail, cada um num campo separado. Eles vão
+  para o chamado, o painel (coluna "Centro de custo", busca e detalhe), o Admin (com filtro) e o
+  Excel. Quem já tinha se identificado antes responde só o centro de custo. Os campos e a ordem
+  ficam em `CENTRAL_IDENTIFICACAO` no `.env` (opções: `nome`, `setor`, `centro_custo`, `email`,
+  `matricula`).
 - `menu`, `sair` e `analista` funcionam em qualquer etapa; `0` abre chamado.
 - 3 respostas inválidas seguidas: o assistente oferece abrir chamado.
 - Com o chamado aberto, as mensagens do colaborador vão para o chamado; a TI responde pelo painel
@@ -403,6 +408,7 @@ prioridade, SLA (no prazo, atenção, vencido), busca e "só os meus". A planilh
 |---|---|
 | Número do chamado | Protocolo (ex.: TI-2026-000123) |
 | Colaborador | Nome de quem abriu |
+| Centro de custo | Centro de custo informado pelo colaborador |
 | Assunto | Categoria (ou "Sem categoria") |
 | Status | Em fila, Em atendimento, Aguardando colaborador, Resolvido, Fechado... |
 | SLA | No prazo, Atenção, Vencido ou Cumprido, com a cor verde, amarela ou vermelha |

@@ -13,6 +13,7 @@ from django.db.models import Q
 class Colaborador(models.Model):
     nome = models.CharField(max_length=150)
     setor = models.CharField(max_length=100, blank=True)
+    centro_custo = models.CharField("centro de custo", max_length=60, blank=True, db_index=True)
     email = models.EmailField("e-mail corporativo", blank=True, db_index=True)
     matricula = models.CharField(max_length=20, blank=True, db_index=True)
     criado_em = models.DateTimeField(auto_now_add=True)
