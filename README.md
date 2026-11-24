@@ -339,7 +339,7 @@ Um chamado aberto às 20h começa a contar às 8h do próximo dia útil.
 | 2 | 💻 Computador lento ou travando | 24h | Atrapalha, mas o trabalho geralmente continua |
 | 5 | 🖨️ Impressora | 24h | Quase sempre há outra impressora disponível |
 | 7 | 🔑 Solicitação de acesso | 40h | Requisição, não incidente. Conta depois da aprovação do coordenador e do gerente |
-| 9 | 📦 Requisição de material | 40h | Notebook, monitor, mouse/teclado, cabo HDMI e outros. Notebook e monitor contam depois das aprovações |
+| 9 | 📦 Requisição de material | 40h | 16 itens (notebook, monitor, headset, cabos...). Nos itens com aprovação, conta depois dela |
 | 10 | ✍️ Outros assuntos | 72h | Precisa de triagem; a TI pode reclassificar e o SLA muda |
 | 0 | 🙋 Falar com a equipe de TI | da categoria escolhida | Sem categoria, vale o de "Outros" (72h, `SLA_PADRAO_HORAS`) |
 
@@ -452,10 +452,15 @@ Fica no Admin, em **Orientações**. Um passo por linha. Alguns campos mudam o c
 - **Exige aprovação**: o chamado precisa do coordenador e do gerente da área antes da TI executar
   (veja abaixo). Já vem marcado em **Acesso para colaborador novo** (criação de usuário) e em
   **Acesso a sistema, pasta de rede ou grupo de e-mail** (liberar acesso).
-- **Requisição de material** (opção 9 do menu): **Notebook**, **Monitor (tela)**, **Mouse ou teclado**,
-  **Cabo HDMI ou adaptador** e **Outro material** (headset, webcam, carregador...). Todas abrem
-  chamado para a TI entregar. **Notebook** e **Monitor** exigem a aprovação do coordenador e do gerente;
-  os demais vão direto para a fila. Para mudar, marque ou desmarque **Exige aprovação** no Admin.
+- **Requisição de material** (opção 9 do menu): todos os itens abrem chamado para a TI entregar.
+  - **Com aprovação** do coordenador e do gerente (valor ou risco): Notebook, Computador de mesa,
+    Monitor, Celular ou chip corporativo, Pendrive ou HD externo.
+  - **Direto para a fila**: Mouse ou teclado, Headset, Webcam, Carregador ou fonte do notebook,
+    Cabo HDMI ou adaptador, Dock station ou hub USB-C, Suporte para notebook ou monitor, Filtro de
+    linha ou extensão, Empréstimo temporário (notebook, projetor, caixa de som...), Devolução de
+    equipamento e Outro material.
+  - Para mudar a regra de um item, marque ou desmarque **Exige aprovação** no Admin.
+- **Toner ou cartucho acabando** fica em **Impressora** e abre chamado com prioridade baixa.
 - Uma categoria sem orientações (ex.: "Outros assuntos") leva direto ao chamado.
 
 ### Aprovação do coordenador e do gerente da área

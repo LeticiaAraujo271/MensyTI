@@ -289,29 +289,49 @@ class Aprovacao(Base):
 
 
 class RequisicaoDeMaterial(Base):
-    """9 - Requisição de material: 1 Notebook | 2 Monitor | 3 Mouse/teclado | 4 Cabo HDMI | 5 Outro."""
+    """9 - Requisição de material (16 itens). Aprovação: notebook, desktop, monitor, celular/chip, pendrive/HD."""
 
-    def test_aparece_no_menu_antes_de_outros(self):
+    COM_APROVACAO = {"1": "Notebook", "2": "Computador de mesa (desktop)", "3": "Monitor (tela)",
+                     "12": "Celular ou chip corporativo", "13": "Pendrive ou HD externo"}
+    SEM_APROVACAO = {"4": "Mouse ou teclado", "5": "Headset (fone com microfone)", "6": "Webcam",
+                     "7": "Carregador ou fonte do notebook", "8": "Cabo HDMI ou adaptador",
+                     "9": "Dock station ou hub USB-C", "10": "Suporte para notebook ou monitor",
+                     "11": "Filtro de linha ou extensão elétrica",
+                     "14": "Empréstimo temporário (notebook, projetor, caixa de som...)",
+                     "15": "Devolução de equipamento", "16": "Outro material"}
+
+    def test_aparece_no_menu_antes_de_outros_com_todos_os_itens(self):
         menu = e.texto_menu(CTX)
         self.assertIn("*9* - 📦 Requisição de material", menu)
         self.assertIn("*10* - ✍️ Outros assuntos", menu)
         _, rs = self.falar("9")
-        for item in ("Notebook", "Monitor (tela)", "Mouse ou teclado", "Cabo HDMI ou adaptador"):
-            self.assertIn(item, rs[-1].respostas[0])
+        for n, titulo in {**self.COM_APROVACAO, **self.SEM_APROVACAO}.items():
+            self.assertIn(f"*{n}* - {titulo}", rs[-1].respostas[0])
 
-    def test_notebook_e_monitor_exigem_aprovacao(self):
-        for opcao in ("1", "2"):
-            estado, rs = self.falar("9", opcao, "Colaborador novo no Comercial, começa dia 01/12")
-            self.assertEqual(estado.etapa, e.APROVADORES, opcao)
+    def test_itens_de_valor_ou_risco_exigem_aprovacao(self):
+        for opcao, titulo in self.COM_APROVACAO.items():
+            estado, _ = self.falar("9", opcao, "Colaborador novo no Comercial, começa dia 01/12")
+            self.assertEqual(estado.etapa, e.APROVADORES, titulo)
 
-    def test_mouse_e_cabo_hdmi_abrem_chamado_direto(self):
-        for opcao in ("3", "4", "5"):
+    def test_demais_itens_abrem_chamado_direto(self):
+        for opcao, titulo in self.SEM_APROVACAO.items():
             estado, rs = self.falar("9", opcao, "Preciso de 2 unidades para a sala de reunião")
-            self.assertEqual(estado.etapa, e.HUMANO, opcao)
+            self.assertEqual(estado.etapa, e.HUMANO, titulo)
             params = acao(rs[-1], e.ACAO_ABRIR_CHAMADO).params
-            self.assertEqual(params["categoria"], "Requisição de material")
+            self.assertEqual((params["categoria"], params["orientacao"]), ("Requisição de material", titulo))
             self.assertNotIn("aprovadores", params)
 
-    def test_texto_livre_acha_o_cabo_hdmi(self):
-        estado, rs = self.falar("preciso de um cabo hdmi")
-        self.assertIn("Cabo HDMI ou adaptador", " ".join(rs[-1].respostas))
+    def test_texto_livre_acha_o_item(self):
+        for texto, titulo in (("preciso de um cabo hdmi", "Cabo HDMI ou adaptador"),
+                              ("quero um headset", "Headset (fone com microfone)"),
+                              ("perdi o carregador", "Carregador ou fonte do notebook"),
+                              ("preciso de um pendrive", "Pendrive ou HD externo"),
+                              ("toner acabando", "Toner ou cartucho acabando")):
+            _, rs = self.falar(texto)
+            self.assertIn(titulo, " ".join(rs[-1].respostas), texto)
+
+    def test_toner_abre_chamado_na_impressora(self):
+        estado, rs = self.falar("5", "3", "Impressora do 2º andar, impressão falhando")
+        self.assertEqual(estado.etapa, e.HUMANO)
+        params = acao(rs[-1], e.ACAO_ABRIR_CHAMADO).params
+        self.assertEqual((params["categoria"], params["prioridade"]), ("Impressora", "baixa"))
