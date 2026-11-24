@@ -292,6 +292,73 @@ CATALOGO_INICIAL = [
         ],
     },
     {
+        # Pedido de equipamento: a TI entrega. Notebook e monitor precisam de coordenador e gerente.
+        "nome": "Requisição de material",
+        "sla_horas": 40,
+        "emoji": "📦",
+        "orientacoes": [
+            {
+                "titulo": "Notebook",
+                "palavras_chave": ["notebook", "laptop", "computador novo", "maquina nova", "requisicao",
+                                   "material", "equipamento", "solicitar", "pedir"],
+                "passos": [
+                    "Informe para quem é o notebook (você ou um colaborador novo) e o motivo: colaborador novo, troca por defeito ou equipamento antigo.",
+                    "Se for troca, informe o número de patrimônio do notebook atual.",
+                    "A entrega depende da aprovação do coordenador e do gerente da área (o assistente pede os dois) e do estoque.",
+                ],
+                "observacao": "Não compre equipamentos por conta própria: a TI entrega o notebook já configurado.",
+                "abre_chamado": True,
+                "exige_aprovacao": True,
+            },
+            {
+                "titulo": "Monitor (tela)",
+                "palavras_chave": ["monitor", "tela", "segunda tela", "monitor novo", "tela nova", "requisicao",
+                                   "material", "equipamento"],
+                "passos": [
+                    "Informe quantos monitores você precisa e o motivo (segunda tela, troca por defeito, colaborador novo).",
+                    "Informe onde o monitor vai ser usado (andar, sala ou mesa).",
+                    "A entrega depende da aprovação do coordenador e do gerente da área (o assistente pede os dois) e do estoque.",
+                ],
+                "observacao": "",
+                "abre_chamado": True,
+                "exige_aprovacao": True,
+            },
+            {
+                "titulo": "Mouse ou teclado",
+                "palavras_chave": ["mouse", "teclado", "mouse novo", "teclado novo", "requisicao", "material"],
+                "passos": [
+                    "Informe se precisa de mouse, teclado ou os dois, e a quantidade.",
+                    "Se for troca por defeito, a TI recolhe o item antigo na entrega.",
+                ],
+                "observacao": "",
+                "abre_chamado": True,
+            },
+            {
+                "titulo": "Cabo HDMI ou adaptador",
+                "palavras_chave": ["hdmi", "cabo", "adaptador", "displayport", "usb-c", "conversor", "extensao",
+                                   "requisicao", "material"],
+                "passos": [
+                    "Informe o tipo de cabo ou adaptador (HDMI, DisplayPort, USB-C para HDMI...) e a quantidade.",
+                    "Se souber, informe o comprimento necessário (ex.: 1,5 m ou 3 m).",
+                    "Informe onde vai ser usado (mesa, sala de reunião...).",
+                ],
+                "observacao": "",
+                "abre_chamado": True,
+            },
+            {
+                "titulo": "Outro material (headset, webcam, carregador...)",
+                "palavras_chave": ["headset", "fone", "webcam", "camera", "carregador", "fonte", "suporte",
+                                   "dock", "requisicao", "material", "equipamento"],
+                "passos": [
+                    "Informe qual material você precisa, a quantidade e o motivo (novo, troca por defeito...).",
+                    "Se for troca, a TI recolhe o item antigo na entrega.",
+                ],
+                "observacao": "",
+                "abre_chamado": True,
+            },
+        ],
+    },
+    {
         # Sem orientações: o colaborador descreve e o chamado é aberto direto.
         "nome": "Outros assuntos",
         "sla_horas": 72,

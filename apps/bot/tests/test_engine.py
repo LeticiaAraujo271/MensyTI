@@ -8,7 +8,7 @@ from apps.bot import engine as e
 from apps.orientacoes.conteudo_inicial import CATALOGO_INICIAL
 
 # Menu: 1 Acesso | 2 Computador | 3 Internet | 4 E-mail | 5 Impressora | 6 Sistemas
-#       7 Solicitação de acesso | 8 Segurança | 9 Outros
+#       7 Solicitação de acesso | 8 Segurança | 9 Requisição de material | 10 Outros
 CTX = e.Contexto(catalogo=CATALOGO_INICIAL)
 IDENT = ("oi", "Maria Silva", "Financeiro", "maria@empresa.com.br")
 
@@ -124,7 +124,7 @@ class NaoResolvido(Base):
         self.assertIn("seg a sex, 9h-17h", rs[-1].respostas[0])
 
     def test_categoria_sem_orientacao_vai_direto_para_chamado(self):
-        estado, rs = self.falar("9")  # Outros assuntos
+        estado, rs = self.falar("10")  # Outros assuntos
         self.assertEqual(estado.etapa, e.DESCREVER)
 
     def test_solicitacao_de_acesso_sempre_abre_chamado(self):
@@ -286,3 +286,32 @@ class Aprovacao(Base):
         estado, rs = self.falar("3", "1", "2", "Cabo conectado e continua sem rede")
         self.assertEqual(estado.etapa, e.HUMANO)
         self.assertNotIn("aprovadores", acao(rs[-1], e.ACAO_ABRIR_CHAMADO).params)
+
+
+class RequisicaoDeMaterial(Base):
+    """9 - Requisição de material: 1 Notebook | 2 Monitor | 3 Mouse/teclado | 4 Cabo HDMI | 5 Outro."""
+
+    def test_aparece_no_menu_antes_de_outros(self):
+        menu = e.texto_menu(CTX)
+        self.assertIn("*9* - 📦 Requisição de material", menu)
+        self.assertIn("*10* - ✍️ Outros assuntos", menu)
+        _, rs = self.falar("9")
+        for item in ("Notebook", "Monitor (tela)", "Mouse ou teclado", "Cabo HDMI ou adaptador"):
+            self.assertIn(item, rs[-1].respostas[0])
+
+    def test_notebook_e_monitor_exigem_aprovacao(self):
+        for opcao in ("1", "2"):
+            estado, rs = self.falar("9", opcao, "Colaborador novo no Comercial, começa dia 01/12")
+            self.assertEqual(estado.etapa, e.APROVADORES, opcao)
+
+    def test_mouse_e_cabo_hdmi_abrem_chamado_direto(self):
+        for opcao in ("3", "4", "5"):
+            estado, rs = self.falar("9", opcao, "Preciso de 2 unidades para a sala de reunião")
+            self.assertEqual(estado.etapa, e.HUMANO, opcao)
+            params = acao(rs[-1], e.ACAO_ABRIR_CHAMADO).params
+            self.assertEqual(params["categoria"], "Requisição de material")
+            self.assertNotIn("aprovadores", params)
+
+    def test_texto_livre_acha_o_cabo_hdmi(self):
+        estado, rs = self.falar("preciso de um cabo hdmi")
+        self.assertIn("Cabo HDMI ou adaptador", " ".join(rs[-1].respostas))

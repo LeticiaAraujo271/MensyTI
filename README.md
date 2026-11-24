@@ -338,8 +338,9 @@ Um chamado aberto às 20h começa a contar às 8h do próximo dia útil.
 | 6 | 🧩 Sistemas internos | 16h | Pode depender de terceiros ou do fornecedor do sistema |
 | 2 | 💻 Computador lento ou travando | 24h | Atrapalha, mas o trabalho geralmente continua |
 | 5 | 🖨️ Impressora | 24h | Quase sempre há outra impressora disponível |
-| 7 | 🔑 Solicitação de acesso | 40h | Depende da aprovação do gestor: é uma requisição, não um incidente |
-| 9 | ✍️ Outros assuntos | 72h | Precisa de triagem; a TI pode reclassificar e o SLA muda |
+| 7 | 🔑 Solicitação de acesso | 40h | Requisição, não incidente. Conta depois da aprovação do coordenador e do gerente |
+| 9 | 📦 Requisição de material | 40h | Notebook, monitor, mouse/teclado, cabo HDMI e outros. Notebook e monitor contam depois das aprovações |
+| 10 | ✍️ Outros assuntos | 72h | Precisa de triagem; a TI pode reclassificar e o SLA muda |
 | 0 | 🙋 Falar com a equipe de TI | da categoria escolhida | Sem categoria, vale o de "Outros" (72h, `SLA_PADRAO_HORAS`) |
 
 **Cores no painel** (fila, detalhe do chamado e Admin):
@@ -451,6 +452,10 @@ Fica no Admin, em **Orientações**. Um passo por linha. Alguns campos mudam o c
 - **Exige aprovação**: o chamado precisa do coordenador e do gerente da área antes da TI executar
   (veja abaixo). Já vem marcado em **Acesso para colaborador novo** (criação de usuário) e em
   **Acesso a sistema, pasta de rede ou grupo de e-mail** (liberar acesso).
+- **Requisição de material** (opção 9 do menu): **Notebook**, **Monitor (tela)**, **Mouse ou teclado**,
+  **Cabo HDMI ou adaptador** e **Outro material** (headset, webcam, carregador...). Todas abrem
+  chamado para a TI entregar. **Notebook** e **Monitor** exigem a aprovação do coordenador e do gerente;
+  os demais vão direto para a fila. Para mudar, marque ou desmarque **Exige aprovação** no Admin.
 - Uma categoria sem orientações (ex.: "Outros assuntos") leva direto ao chamado.
 
 ### Aprovação do coordenador e do gerente da área
