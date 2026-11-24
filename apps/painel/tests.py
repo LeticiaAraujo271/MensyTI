@@ -131,7 +131,7 @@ class PainelTest(TestCase):
         self.assertIn("spreadsheetml", r["Content-Type"])
         self.assertIn("attachment", r["Content-Disposition"])
 
-        ws = load_workbook(BytesIO(r.content)).active
+        ws = load_workbook(BytesIO(r.content))["Chamados"]
         cab = [c.value for c in ws[1]]
         for campo in ("Número do chamado", "Colaborador", "Assunto", "Status", "SLA", "Responsável", "Canal",
                       "Aberto em", "Data do fechamento", "Pesquisa de satisfação", "Observação da pesquisa"):
@@ -155,7 +155,7 @@ class PainelTest(TestCase):
         from openpyxl import load_workbook
 
         self.client.login(username="ana", password="senha-forte-123")
-        ws = load_workbook(BytesIO(self.client.get("/painel/exportar.xlsx?status=fechado").content)).active
+        ws = load_workbook(BytesIO(self.client.get("/painel/exportar.xlsx?status=fechado").content))["Chamados"]
         self.assertEqual(ws.max_row, 1)  # só o cabeçalho: nenhum chamado fechado
 
     def test_painel_mostra_centro_de_custo(self):
@@ -164,6 +164,27 @@ class PainelTest(TestCase):
         self.assertContains(self.client.get("/painel/"), "1105 - Financeiro")
         self.assertContains(self.client.get("/painel/?q=1105&status=todos"), self.chamado.protocolo)
         self.assertContains(self.client.get(self.url), "Centro de custo")
+
+
+    def test_excel_tem_dashboard_com_filtros_e_graficos(self):
+        from io import BytesIO
+
+        from openpyxl import load_workbook
+
+        Chamado.objects.update(centro_custo="1105 - Financeiro")
+        self.client.login(username="ana", password="senha-forte-123")
+        wb = load_workbook(BytesIO(self.client.get("/painel/exportar.xlsx?status=todos").content))
+        self.assertEqual(wb.sheetnames, ["Dashboard", "Chamados"])
+        ws = wb["Dashboard"]
+        self.assertEqual(wb.active.title, "Dashboard")
+        listas = [dv.formula1 for dv in ws.data_validations.dataValidation]
+        self.assertTrue(any("Muito insatisfeito" in f for f in listas))  # filtro de qualidade
+        self.assertTrue(any("Vencido" in f for f in listas))            # filtro de SLA
+        self.assertGreaterEqual(len(ws._charts), 4)
+        textos = [c.value for linha in ws.iter_rows() for c in linha if isinstance(c.value, str)]
+        self.assertIn("Chamados por centro de custo", textos)
+        self.assertIn("1105 - Financeiro", textos)
+        self.assertTrue(any(t.startswith("=COUNTIFS(Chamados!") for t in textos))
 
 
 @override_settings(CENTRAL=CENTRAL_TESTE, WHATSAPP_ATIVO=True)
@@ -219,3 +240,4 @@ class SimuladorWhatsAppTest(TestCase):
         self.assertEqual(r["chamados"], 1)
         self.assertFalse(Chamado.objects.exists())
         self.assertFalse(Conversa.objects.exists())
+

@@ -421,8 +421,22 @@ prioridade, SLA (no prazo, atenção, vencido), busca e "só os meus". A planilh
 | Pesquisa de satisfação | Muito satisfeito, Satisfeito, Insatisfeito ou Muito insatisfeito |
 | Observação da pesquisa | O que o colaborador escreveu |
 
-A planilha já vem com filtros no cabeçalho e a primeira linha congelada. As datas estão no horário
-de Brasília.
+A planilha tem duas abas:
+
+- **Dashboard** (abre primeiro), nas cores Mensori:
+  - **filtros** no topo (campos verdes): **Qualidade do atendimento** (Muito satisfeito, Satisfeito,
+    Insatisfeito, Muito insatisfeito, Sem resposta), **Situação do SLA** e **Status**. Ao trocar um
+    filtro, todos os números e gráficos se recalculam na hora;
+  - **indicadores**: chamados, em aberto, SLA vencido, pesquisas respondidas e % de satisfação;
+  - **Chamados por centro de custo** (tabela + gráfico de barras);
+  - **Qualidade do atendimento** e **Situação do SLA** (tabelas + gráficos de rosca);
+  - **Chamados por assunto** (tabela + gráfico de barras);
+  - **Qualidade do atendimento por centro de custo**: quantas avaliações de cada tipo cada centro
+    de custo deu, com verde nos satisfeitos e vermelho nos insatisfeitos.
+- **Chamados**: uma linha por chamado, com filtro em cada coluna e a primeira linha congelada.
+
+Os números do Dashboard são fórmulas do próprio Excel sobre a aba Chamados (sem macros). As datas
+estão no horário de Brasília. Pronto para imprimir em paisagem, uma seção inteira por página.
 
 A avaliação de 1 a 5 continua existindo só para os casos **resolvidos no autoatendimento**, sem
 chamado.
