@@ -1,5 +1,7 @@
 (function () {
   "use strict";
+  // Nome do cookie CSRF vem da página (configurável no .env); padrão do Django: csrftoken.
+  const NOME_COOKIE_CSRF = (document.querySelector('meta[name="csrf-cookie"]') || {}).content || "csrftoken";
 
   const lista = document.getElementById("mensagens");
   const opcoes = document.getElementById("opcoes");
@@ -124,7 +126,7 @@
       const r = await fetch("api/enviar/", {
         method: "POST",
         credentials: "same-origin",
-        headers: { "Content-Type": "application/json", "X-CSRFToken": cookie("csrftoken") },
+        headers: { "Content-Type": "application/json", "X-CSRFToken": cookie(NOME_COOKIE_CSRF) },
         body: JSON.stringify({ texto: texto, id: novoId(), depois: ultimoId }),
       });
       const dados = await r.json().catch(() => ({}));

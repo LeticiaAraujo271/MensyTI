@@ -24,6 +24,10 @@ valores = {
     "SERVIDOR_HOST": "0.0.0.0",
     # Uma porta por tela na aba PORTS: 8001 = Painel da TI, 8002 = Administração
     "SERVIDOR_ATALHOS": "8001:/painel/,8002:/admin/",
+    # Cookies com nomes próprios e sem "só HTTPS" (o VS Code instalado abre as portas em http://localhost)
+    "DJANGO_COOKIE_SESSAO": "central_sessao",
+    "DJANGO_COOKIE_CSRF": "central_csrf",
+    "DJANGO_COOKIES_SEGUROS": "false",
 }
 linhas = []
 for linha in p.read_text(encoding="utf-8").splitlines():
@@ -55,6 +59,9 @@ na aba "PORTS" (aqui embaixo): clique no ícone do globo da linha desejada.
   Chat:            porta 8000  (Chat - Central de TI)
   Painel da TI:    porta 8001  (Painel da TI)
   Administração:   porta 8002  (Administração)
+
+As portas 8001 e 8002 levam ao painel e à administração na porta 8000, onde
+fica o login: entrando uma vez, vale para os dois.
 
 Para outra pessoa abrir: botão direito na porta > Port Visibility > Public
 (faça nas três portas) e envie o link. Volte para Private quando terminar.

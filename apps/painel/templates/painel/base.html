@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-cookie" content="{{ csrf_cookie_nome }}">
   <title>{% block titulo %}Painel de TI{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'painel/painel.css' %}">
   {% block cabeca %}{% endblock %}

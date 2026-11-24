@@ -3,6 +3,7 @@ Configurações do Chatbot de TI (Digisac + Django).
 Todos os valores sensíveis vêm de variáveis de ambiente ou do arquivo .env
 (lidos com python-decouple; veja .env.example).
 """
+import os
 from pathlib import Path
 
 from decouple import AutoConfig, Csv
@@ -56,6 +57,7 @@ MIDDLEWARE = [
 
 # Portas extras que abrem direto numa tela (ex.: no Codespaces, 8001 = painel e 8002 = admin).
 SERVIDOR_ATALHOS = env("SERVIDOR_ATALHOS", default="")
+SERVIDOR_PORTA = env("SERVIDOR_PORTA", default=8000, cast=int)
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
@@ -115,6 +117,24 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = env("DJANGO_COOKIES_SEGUROS", default=not DEBUG, cast=bool)
 CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
+# Nomes dos cookies (o Codespaces usa nomes próprios para não misturar com outra Central em localhost)
+SESSION_COOKIE_NAME = env("DJANGO_COOKIE_SESSAO", default="sessionid")
+CSRF_COOKIE_NAME = env("DJANGO_COOKIE_CSRF", default="csrftoken")
+
+# GitHub Codespaces: libera os endereços exatos das portas (pelo navegador ou pelo VS Code instalado,
+# que encaminha as portas para localhost).
+_CODESPACE = os.environ.get("CODESPACE_NAME", "")
+_DOMINIO_CODESPACE = os.environ.get("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN", "")
+if _CODESPACE and _DOMINIO_CODESPACE:
+    _portas_extras = [int(i.split(":")[0]) for i in SERVIDOR_ATALHOS.split(",") if i.split(":")[0].strip().isdigit()]
+    for _p in [SERVIDOR_PORTA, *_portas_extras]:
+        for _origem in (f"https://{_CODESPACE}-{_p}.{_DOMINIO_CODESPACE}", f"http://localhost:{_p}",
+                        f"http://127.0.0.1:{_p}"):
+            if _origem not in CSRF_TRUSTED_ORIGINS:
+                CSRF_TRUSTED_ORIGINS.append(_origem)
+    for _h in (f".{_DOMINIO_CODESPACE}", "localhost", "127.0.0.1"):
+        if _h not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(_h)
 X_FRAME_OPTIONS = "DENY"
 SECURE_CONTENT_TYPE_NOSNIFF = True
 

@@ -13,5 +13,8 @@ def _logo() -> str:
 
 
 def marca(request):
-    """`logo_marca`: caminho estático do logo, ou "" se ainda não foi colocado."""
-    return {"logo_marca": _logo()}
+    """`logo_marca`: caminho estático do logo ("" se ainda não foi colocado) e o nome do cookie CSRF
+    (configurável; o JavaScript lê por ele para mandar o X-CSRFToken)."""
+    from django.conf import settings
+
+    return {"logo_marca": _logo(), "csrf_cookie_nome": settings.CSRF_COOKIE_NAME}

@@ -92,19 +92,25 @@ de qualquer lugar (inclusive fora da rede da empresa).
 4. O usuário e a senha do painel/admin ficam no arquivo **ACESSO_CODESPACE.txt**, que abre sozinho
    no editor (usuário `admin`). Troque a senha em **Administração** → Usuários.
 
-| Porta (aba PORTS) | Tela | Endereço |
+| Porta (aba PORTS) | Clique no globo 🌐 para abrir | Vai para |
 |---|---|---|
 | **8000** · Chat - Central de TI | Chat do colaborador | `https://<seu-codespace>-8000.app.github.dev/` |
-| **8001** · Painel da TI | Painel dos analistas | `https://<seu-codespace>-8001.app.github.dev/` |
-| **8002** · Administração | Admin do Django | `https://<seu-codespace>-8002.app.github.dev/` |
+| **8001** · Painel da TI | Painel dos analistas | `https://<seu-codespace>-8000.app.github.dev/painel/` |
+| **8002** · Administração | Admin do Django | `https://<seu-codespace>-8000.app.github.dev/admin/` |
 
-As três portas são a mesma Central (mesmo banco): a 8001 e a 8002 só abrem direto no painel e na
-administração. Isso vem da configuração `SERVIDOR_ATALHOS=8001:/painel/,8002:/admin/`, que o
-Codespaces já coloca no `.env` dele. No seu Windows ela fica vazia e tudo continua na porta 8000.
+A 8001 e a 8002 são atalhos: levam ao painel e à administração **na porta 8000**, onde fica o
+login. Assim os cookies de segurança ficam num endereço só (entrar uma vez vale para o painel e
+para a administração) e o login não cai em "Verificação CSRF falhou". Isso vem de
+`SERVIDOR_ATALHOS=8001:/painel/,8002:/admin/`, que o Codespaces coloca no `.env` dele, junto com
+cookies de nome próprio (para não se misturar com outra Central aberta no seu computador). No seu
+Windows nada disso é usado e tudo continua na porta 8000.
+
+Se o login der "Envio recusado (403)": no terminal do Codespace, rode `git pull` e
+`bash .devcontainer/ligar.sh` (acerta o `.env` e religa) e recarregue a página com **F5**.
 
 **Mostrar para outras pessoas:** por padrão os links só abrem para você (logado no GitHub). Para
-outra pessoa abrir, na aba **PORTS**, clique com o botão direito em cada porta que quiser mostrar
-(8000, 8001 e/ou 8002) → **Port Visibility → Public** e envie o link. Qualquer pessoa com o link
+outra pessoa abrir, na aba **PORTS**, clique com o botão direito na porta **8000** (e na 8001/8002,
+se for mandar esses atalhos) → **Port Visibility → Public** e envie o link. Qualquer pessoa com o link
 abre a tela; volte para **Private** quando terminar.
 
 **Limites do Codespaces** (bom para testar e demonstrar, não para uso diário da empresa):

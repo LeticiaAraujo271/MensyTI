@@ -122,7 +122,7 @@
     const corpo = new URLSearchParams(dados || {});
     return fetch(url, {
       method: "POST", credentials: "same-origin", body: corpo,
-      headers: { "X-CSRFToken": cookie("csrftoken") },
+      headers: { "X-CSRFToken": cookie((document.querySelector('meta[name="csrf-cookie"]') || {}).content || "csrftoken") },
     });
   }
 
