@@ -3,7 +3,7 @@ import io
 
 from django.contrib.auth.models import Group, User
 from django.core import mail
-from django.core.management import call_command
+from django.core.management import CommandError, call_command
 from django.test import TestCase, override_settings
 
 from apps.bot import engine
@@ -180,3 +180,19 @@ class EmailAprovacaoTest(TestCase):
         self.assertEqual(len(mail.outbox), 2)
         self.assertEqual(mail.outbox[1].to, ["gina@empresa.com.br"])
         self.assertIn(gerente.token, mail.outbox[1].body)
+
+
+class TestarEmailTest(TestCase):
+    @override_settings(EMAIL_HOST="", EMAIL_HOST_USER="", EMAIL_HOST_PASSWORD="", APROVACAO_ENVIAR_EMAIL=False)
+    def test_aponta_o_que_falta(self):
+        saida = io.StringIO()
+        with self.assertRaises(CommandError):
+            call_command("testar_email", stdout=saida)
+        self.assertIn("[FALTA] EMAIL_HOST", saida.getvalue())
+
+    @override_settings(EMAIL_HOST="smtp.exemplo", EMAIL_HOST_USER="central@exemplo.com",
+                       EMAIL_HOST_PASSWORD="x", APROVACAO_ENVIAR_EMAIL=True,
+                       CENTRAL={**CENTRAL_TESTE, "URL": "http://central.local:8000"})
+    def test_envia_email_de_teste(self):
+        call_command("testar_email", "--para", "ti@exemplo.com", stdout=io.StringIO())
+        self.assertEqual(mail.outbox[0].to, ["ti@exemplo.com"])

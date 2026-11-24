@@ -488,6 +488,9 @@ Colaborador pede  →  1. Coordenador aprova  →  2. Gerente da área aprova  �
     `EMAIL_REMETENTE` e `CENTRAL_URL`), ele vai **por e-mail**, automaticamente;
   - sem e-mail configurado, a TI abre o chamado no painel, clica em **Copiar link** e envia pelo
     Teams ou pelo e-mail dela.
+  - para configurar o e-mail, rode `powershell -ExecutionPolicy Bypass -File .\configurar_integracoes.ps1 -SoEmail`:
+    o script pede os dados no terminal (a senha fica oculta), grava no `.env`, manda um e-mail de
+    teste e reinicia a Central. Para só conferir: `python manage.py testar_email`.
 - Se o aprovador responder por outro meio (ex.: "aprovado" num e-mail), a TI registra no painel em
   **Registrar decisão recebida por outro meio**, informando como a decisão chegou (obrigatório).
 - Tudo fica no histórico do chamado e no Admin, em **Aprovações**.
@@ -526,7 +529,12 @@ O que é preciso:
 | `DIGISAC_SERVICE_ID` (opcional) | ID da conexão de WhatsApp que o bot vai usar |
 | Endereço público com **HTTPS** | Para o Digisac entregar as mensagens: servidor da empresa, Codespaces (porta pública) ou ngrok (só para teste) |
 
-Passo a passo:
+**Jeito mais fácil:** `powershell -ExecutionPolicy Bypass -File .\configurar_integracoes.ps1 -SoWhatsApp`.
+O script pede o endereço, o token (oculto) e os IDs, gera o segredo do webhook, confere com o
+`testar_digisac`, pergunta se liga o WhatsApp, mostra a URL para cadastrar no Digisac e reinicia a
+Central. Sem o parâmetro, ele configura o WhatsApp e o e-mail de uma vez.
+
+Passo a passo manual:
 
 1. No `.env`, preencha `DIGISAC_URL`, `DIGISAC_TOKEN`, `DIGISAC_SERVICE_ID` e gere o
    `DIGISAC_WEBHOOK_TOKEN` (`python -c "import secrets; print(secrets.token_urlsafe(32))"`).
