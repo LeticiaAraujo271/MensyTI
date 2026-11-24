@@ -11,6 +11,8 @@ Etapas (BPMN):
   identificacao -> menu/categoria/sugestoes (triagem) -> orientacao (resolveu?)
   -> avaliacao -> encerrado            (resolvido no autoatendimento)
   -> descrever -> humano               (chamado aberto; a TI continua pelo painel)
+  -> descrever -> aprovadores -> humano (criação de usuário / liberar acesso: o chamado espera a
+                                         aprovação do coordenador e depois do gerente da área)
   -> pesquisa -> pesquisa_obs -> encerrado   (TI resolveu o chamado: pesquisa de satisfação)
 """
 from __future__ import annotations
@@ -30,6 +32,7 @@ CATEGORIA = "categoria"
 SUGESTOES = "sugestoes"
 RESOLVEU = "resolveu"
 DESCREVER = "descrever"
+APROVADORES = "aprovadores"  # pede coordenador e gerente da área (solicitações que exigem aprovação)
 AVALIACAO = "avaliacao"
 HUMANO = "humano"          # chamado aberto: mensagens vão para a TI, o bot não responde
 PESQUISA = "pesquisa"      # chamado resolvido: "como você avalia o atendimento?"
@@ -59,7 +62,8 @@ CMD_ANALISTA = {"atendente", "analista", "humano", "pessoa", "falar com analista
 
 # Chaves temporárias de cada atendimento (as de identificação ficam).
 _TEMPORARIOS = ("campo", "categoria", "orientacao", "sugestoes", "tentativas",
-                "motivo", "relato", "descricao", "pesquisa", "pesquisa_resposta")
+                "motivo", "relato", "descricao", "pesquisa", "pesquisa_resposta",
+                "aprovadores", "campo_aprovacao")
 
 # Pesquisa de satisfação do chamado: (valor gravado, rótulo, emoji, exige observação)
 OPCOES_PESQUISA = (
@@ -69,6 +73,12 @@ OPCOES_PESQUISA = (
     ("muito_insatisfeito", "Muito insatisfeito", "😞", True),
 )
 CMD_PULAR = {"pular", "nao", "n", "sem observacao", "nada"}
+
+# Níveis de aprovação, na ordem em que aprovam: (nível, chave, rótulo)
+NIVEIS_APROVACAO = ((1, "coordenador", "coordenador"), (2, "gerente", "gerente da área"))
+ROTULO_NIVEL = {chave: rotulo for _, chave, rotulo in NIVEIS_APROVACAO}
+# Perguntas, na ordem: (chave do aprovador, campo)
+PASSOS_APROVACAO = tuple((chave, campo) for _, chave, _ in NIVEIS_APROVACAO for campo in ("nome", "email"))
 
 
 @dataclass
@@ -325,7 +335,7 @@ def processar(estado: Estado, texto: str, ctx: Contexto) -> Resultado:
             return _encerrar(estado, "Atendimento encerrado. Quando precisar, é só chamar! 👋", "cancelada")
         if cmd in CMD_MENU:
             return _ir_menu(estado, ctx)
-        if cmd in CMD_ANALISTA and estado.etapa not in (DESCREVER, PESQUISA_OBS):
+        if cmd in CMD_ANALISTA and estado.etapa not in (DESCREVER, PESQUISA_OBS, APROVADORES):
             return _pedir_descricao(estado, ctx, motivo="colaborador pediu atendimento da TI")
 
     etapa = estado.etapa
@@ -343,6 +353,8 @@ def processar(estado: Estado, texto: str, ctx: Contexto) -> Resultado:
         return _resolveu(estado, texto, ctx)
     if etapa == DESCREVER:
         return _receber_descricao(estado, texto, ctx)
+    if etapa == APROVADORES:
+        return _receber_aprovador(estado, texto, ctx)
     if etapa == AVALIACAO:
         return _avaliacao(estado, texto)
     if etapa == PESQUISA:
@@ -624,9 +636,73 @@ def _receber_descricao(estado: Estado, texto: str, ctx: Contexto) -> Resultado:
         return Resultado(estado, ["Pode descrever um pouco melhor? (ou digite *menu* para voltar)"])
     estado.dados["descricao"] = descricao[:1000]
     ori = _orientacao_atual(estado, ctx)
+    if ori and ori.get("exige_aprovacao"):
+        return _pedir_aprovadores(estado)
     prioridade = ori.get("prioridade", "media") if ori else "media"
     return _abrir_chamado(estado, ctx, motivo=estado.dados.get("motivo") or "colaborador pediu atendimento",
                           prioridade=prioridade if prioridade in PRIORIDADES else "media")
+
+
+# --- aprovação (coordenador -> gerente da área) ------------------------------
+def _pergunta_aprovador(chave: str, campo: str) -> str:
+    if campo == "nome":
+        return f"Qual é o *nome completo* do seu *{ROTULO_NIVEL[chave]}*?"
+    return f"Qual é o *e-mail corporativo* do seu *{ROTULO_NIVEL[chave]}*?"
+
+
+def _pedir_aprovadores(estado: Estado) -> Resultado:
+    estado.etapa = APROVADORES
+    estado.dados["aprovadores"] = {}
+    estado.dados["campo_aprovacao"] = 0
+    estado.dados["tentativas"] = 0
+    return Resultado(estado, [
+        "🔐 Esta solicitação precisa de *duas aprovações*, nesta ordem:\n"
+        "1️⃣ do seu *coordenador*\n"
+        "2️⃣ do *gerente da área*\n\n"
+        "Cada um recebe um link para aprovar. A TI só executa depois das duas.",
+        _pergunta_aprovador(*PASSOS_APROVACAO[0]),
+    ])
+
+
+def _receber_aprovador(estado: Estado, texto: str, ctx: Contexto) -> Resultado:
+    i = estado.dados.get("campo_aprovacao")
+    aprov = estado.dados.get("aprovadores")
+    if not isinstance(i, int) or not 0 <= i < len(PASSOS_APROVACAO) or not isinstance(aprov, dict):
+        return _pedir_aprovadores(estado)
+    chave, campo = PASSOS_APROVACAO[i]
+    rotulo = ROTULO_NIVEL[chave]
+    valor, erro = validar_campo(campo, texto, ctx)
+    if valor is None:
+        erro = erro.replace("o seu *nome completo*", f"o *nome completo* do seu {rotulo}")
+        erro = erro.replace("o seu *e-mail corporativo*", f"o *e-mail corporativo* do seu {rotulo}")
+        return Resultado(estado, [erro])
+    if campo == "email":
+        if valor == (estado.dados.get("email") or "").lower():
+            return Resultado(estado, ["Você não pode aprovar a sua própria solicitação. 🙂 "
+                                      f"Digite o e-mail do seu *{rotulo}*."])
+        if valor in [a.get("email") for k, a in aprov.items() if k != chave]:
+            return Resultado(estado, ["O coordenador e o gerente da área precisam ser *pessoas diferentes*. "
+                                      f"Digite o e-mail do seu *{rotulo}*."])
+    aprov.setdefault(chave, {})[campo] = valor
+    estado.dados["aprovadores"] = aprov
+    i += 1
+    if i < len(PASSOS_APROVACAO):
+        estado.dados["campo_aprovacao"] = i
+        return Resultado(estado, [_pergunta_aprovador(*PASSOS_APROVACAO[i])])
+    ori = _orientacao_atual(estado, ctx)
+    prioridade = ori.get("prioridade", "media") if ori else "media"
+    return _abrir_chamado(estado, ctx, motivo=estado.dados.get("motivo") or "solicitação com aprovação",
+                          prioridade=prioridade if prioridade in PRIORIDADES else "media")
+
+
+def _lista_aprovadores(dados: dict) -> list[dict]:
+    aprov = dados.get("aprovadores") or {}
+    saida = []
+    for nivel, chave, rotulo in NIVEIS_APROVACAO:
+        a = aprov.get(chave) or {}
+        if a.get("nome") and a.get("email"):
+            saida.append({"nivel": nivel, "nome": a["nome"], "email": a["email"], "rotulo": rotulo})
+    return saida
 
 
 def _abrir_chamado(estado: Estado, ctx: Contexto, motivo: str, prioridade: str) -> Resultado:
@@ -641,10 +717,19 @@ def _abrir_chamado(estado: Estado, ctx: Contexto, motivo: str, prioridade: str) 
         "descricao": d.get("descricao") or d.get("relato") or "",
         "resumo": _resumo(estado, ctx, motivo, prioridade),
     }
+    aprovadores = _lista_aprovadores(d)
+    if aprovadores:
+        params["aprovadores"] = [{k: a[k] for k in ("nivel", "nome", "email")} for a in aprovadores]
     estado.etapa = HUMANO
-    for k in ("tentativas", "motivo", "sugestoes", "campo"):
+    for k in ("tentativas", "motivo", "sugestoes", "campo", "aprovadores", "campo_aprovacao"):
         d.pop(k, None)
 
+    if aprovadores:
+        linhas = "\n".join(f"{a['nivel']}️⃣ {a['rotulo'].capitalize()}: *{a['nome']}*" for a in aprovadores)
+        texto = (f"📝 Registrei a solicitação *{PROTOCOLO}*. Ela seguiu para aprovação:\n{linhas}\n\n"
+                 "Cada aprovador recebe um link. Você recebe aqui o resultado de cada etapa e, "
+                 "depois das duas aprovações, a TI executa o pedido.")
+        return Resultado(estado, [texto], [Acao(ACAO_ABRIR_CHAMADO, params)])
     if prioridade == "critica":
         texto = (f"🚨 Abri um chamado *prioritário* para a TI: *{PROTOCOLO}*.\n"
                  "Se puder, conte aqui mais detalhes (o que aconteceu, quando, quem mais foi afetado). "
@@ -716,4 +801,6 @@ def _resumo(estado: Estado, ctx: Contexto, motivo: str, prioridade: str) -> str:
         f"Prioridade: {prioridade}",
         f"Motivo: {motivo}",
     ]
+    for a in _lista_aprovadores(d):
+        linhas.append(f"Aprovador {a['nivel']} ({a['rotulo']}): {a['nome']} <{a['email']}>")
     return "\n".join(linhas)

@@ -123,7 +123,22 @@ CENTRAL = {
     "DOMINIOS_EMAIL": env("CENTRAL_DOMINIOS_EMAIL", default="", cast=Csv(str.lower)),
     # Limite de mensagens por minuto por navegador (proteção contra abuso)
     "LIMITE_MENSAGENS_MINUTO": env("CENTRAL_LIMITE_MENSAGENS_MINUTO", default=20, cast=int),
+    # Endereço da Central que vai nos links de aprovação enviados por e-mail. Ex.: http://nb332:8000
+    "URL": env("CENTRAL_URL", default="").rstrip("/"),
 }
+
+# --------------------------------------------------------------------------
+# E-mail (links de aprovação para o coordenador e o gerente da área)
+# Sem EMAIL_HOST, nada é enviado: a TI copia o link no painel e manda pelo Teams/e-mail.
+# --------------------------------------------------------------------------
+EMAIL_HOST = env("EMAIL_HOST", default="")
+EMAIL_PORT = env("EMAIL_PORT", default=587, cast=int)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env("EMAIL_USE_TLS", default=True, cast=bool)
+EMAIL_TIMEOUT = 15
+DEFAULT_FROM_EMAIL = env("EMAIL_REMETENTE", default=EMAIL_HOST_USER or "central-ti@localhost")
+APROVACAO_ENVIAR_EMAIL = env("APROVACAO_ENVIAR_EMAIL", default=bool(EMAIL_HOST), cast=bool)
 
 # Canal WhatsApp (opcional). Desligado: o webhook ignora as mensagens e nada é enviado.
 WHATSAPP_ATIVO = env("WHATSAPP_ATIVO", default=False, cast=bool)

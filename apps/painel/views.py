@@ -15,7 +15,9 @@ from django.views.decorators.http import require_GET, require_POST
 
 from apps.bot.orquestrador import ConversationOrchestrator
 from apps.canais import WebChannel
-from apps.chamados import sla
+from django.conf import settings
+
+from apps.chamados import aprovacoes, sla
 from apps.chamados.models import Chamado
 from apps.orientacoes.models import Categoria
 from apps.chamados.servicos import TicketService, TransicaoInvalida
@@ -112,7 +114,15 @@ def detalhe(request, protocolo):
                                 protocolo=protocolo)
     conversa = chamado.conversa
     mensagens = conversa.mensagens.select_related("analista") if conversa else []
+    niveis = list(chamado.aprovacoes.select_related("registrada_por"))
+    da_vez = aprovacoes.proxima(chamado)
+    for n in niveis:
+        n.vez = da_vez is not None and n.pk == da_vez.pk
+        if n.vez:
+            n.link = aprovacoes.link(n, base=settings.CENTRAL.get("URL") or request.build_absolute_uri("/"))
     return render(request, "painel/detalhe.html", {
+        "aprovacoes": niveis,
+        "email_aprovacao": settings.APROVACAO_ENVIAR_EMAIL,
         "chamado": chamado,
         "mensagens": mensagens,
         "ultimo_id": mensagens.last().id if conversa and mensagens.exists() else 0,
@@ -152,6 +162,26 @@ def acao(request, protocolo):
             tickets.reclassificar(chamado, request.POST.get("categoria", ""), request.user)
             messages.success(request, f"Categoria: {chamado.categoria or 'sem categoria'} · "
                                       f"SLA {chamado.sla_horas}h úteis.")
+        elif acao == "aprovacao":
+            # Decisão que o aprovador deu por outro meio (e-mail, Teams): a TI registra com a evidência.
+            aprovacao = aprovacoes.proxima(chamado)
+            if aprovacao is None:
+                raise TransicaoInvalida("Não há aprovação pendente neste chamado.")
+            decisao = request.POST.get("decisao")
+            if decisao not in ("aprovar", "reprovar"):
+                raise TransicaoInvalida("Escolha aprovar ou reprovar.")
+            aprovacoes.decidir_e_avisar(aprovacao, decisao == "aprovar", request.POST.get("comentario", ""),
+                                        usuario=request.user)
+            messages.success(request, f"Decisão do {aprovacao.get_nivel_display().lower()} registrada "
+                                      "e colaborador avisado.")
+        elif acao == "reenviar_aprovacao":
+            aprovacao = aprovacoes.proxima(chamado)
+            if aprovacao is None:
+                raise TransicaoInvalida("Não há aprovação pendente neste chamado.")
+            if aprovacoes.notificar(aprovacao):
+                messages.success(request, f"Link reenviado para {aprovacao.email}.")
+            else:
+                messages.error(request, "Não foi possível enviar o e-mail. Copie o link e envie ao aprovador.")
         elif acao == "fechar":
             tickets.mudar_status(chamado, S.FECHADO, request.user)
             messages.success(request, "Chamado fechado.")
@@ -161,7 +191,7 @@ def acao(request, protocolo):
             messages.success(request, "Chamado reaberto.")
         else:
             messages.error(request, "Ação desconhecida.")
-    except (TransicaoInvalida, ValueError) as e:
+    except (TransicaoInvalida, ValueError, aprovacoes.AprovacaoInvalida) as e:
         messages.error(request, str(e))
     return redirect("painel:detalhe", protocolo=protocolo)
 

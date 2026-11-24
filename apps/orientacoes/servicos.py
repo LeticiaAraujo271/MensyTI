@@ -24,6 +24,7 @@ class KnowledgeService:
                         "palavras_chave": o.lista_palavras_chave(),
                         "prioridade": o.prioridade,
                         "abre_chamado": o.abre_chamado,
+                        "exige_aprovacao": o.exige_aprovacao,
                     }
                     for o in cat.orientacoes.all()
                 ],

@@ -411,7 +411,7 @@ prioridade, SLA (no prazo, atenção, vencido), busca e "só os meus". A planilh
 | Colaborador | Nome de quem abriu |
 | Centro de custo | Centro de custo informado pelo colaborador |
 | Assunto | Categoria (ou "Sem categoria") |
-| Status | Em fila, Em atendimento, Aguardando colaborador, Resolvido, Fechado... |
+| Status | Aguardando aprovação, Em fila, Em atendimento, Aguardando colaborador, Resolvido, Fechado... |
 | SLA | No prazo, Atenção, Vencido ou Cumprido, com a cor verde, amarela ou vermelha |
 | SLA (horas úteis), SLA consumido (%), Prazo do SLA | Detalhes do SLA |
 | Responsável | Analista que assumiu |
@@ -448,7 +448,39 @@ Fica no Admin, em **Orientações**. Um passo por linha. Alguns campos mudam o c
 - **Palavras-chave**: ajudam a achar a orientação quando o colaborador escreve com as próprias palavras.
 - **Prioridade crítica**: mostra os avisos e abre o chamado na hora (phishing, vírus, indisponibilidade geral).
 - **Sempre abre chamado**: para pedidos que a TI precisa executar (ex.: solicitação de acesso).
+- **Exige aprovação**: o chamado precisa do coordenador e do gerente da área antes da TI executar
+  (veja abaixo). Já vem marcado em **Acesso para colaborador novo** (criação de usuário) e em
+  **Acesso a sistema, pasta de rede ou grupo de e-mail** (liberar acesso).
 - Uma categoria sem orientações (ex.: "Outros assuntos") leva direto ao chamado.
+
+### Aprovação do coordenador e do gerente da área
+
+Na criação de usuário e na liberação de acesso, depois da descrição o assistente pede o **nome** e o
+**e-mail corporativo** do **coordenador** e do **gerente da área**. Ele não aceita o e-mail do próprio
+colaborador nem a mesma pessoa nos dois níveis.
+
+```
+Colaborador pede  →  1. Coordenador aprova  →  2. Gerente da área aprova  →  Fila da TI (SLA começa)
+                         ↘ reprovou                 ↘ reprovou
+                           solicitação encerrada, com o motivo, e o colaborador é avisado
+```
+
+- O chamado fica com o status **Aguardando aprovação**. A TI vê o chamado, mas não consegue resolver
+  nem mandar para a fila antes das duas aprovações.
+- O **SLA da TI só começa depois da última aprovação**: o tempo de espera pelos aprovadores não conta.
+- Cada aprovador recebe um **link próprio** (`/aprovacao/<código>/`). Por ele, o aprovador vê o pedido
+  e clica em **Aprovar** ou **Reprovar**. Na reprovação, o motivo é obrigatório. Não precisa de login:
+  o link é secreto e vale para uma única decisão.
+- O **gerente só recebe o link depois que o coordenador aprova**.
+- O colaborador recebe no chat (portal ou WhatsApp) o resultado de cada etapa.
+- **Como o link chega ao aprovador:**
+  - com e-mail configurado no `.env` (`EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`,
+    `EMAIL_REMETENTE` e `CENTRAL_URL`), ele vai **por e-mail**, automaticamente;
+  - sem e-mail configurado, a TI abre o chamado no painel, clica em **Copiar link** e envia pelo
+    Teams ou pelo e-mail dela.
+- Se o aprovador responder por outro meio (ex.: "aprovado" num e-mail), a TI registra no painel em
+  **Registrar decisão recebida por outro meio**, informando como a decisão chegou (obrigatório).
+- Tudo fica no histórico do chamado e no Admin, em **Aprovações**.
 
 > ⚠️ Substitua os textos entre `[colchetes]` (links, nomes de sistemas, e-mail da segurança) pelos
 > dados reais. O assistente só mostra o que estiver cadastrado; ele não inventa procedimentos.

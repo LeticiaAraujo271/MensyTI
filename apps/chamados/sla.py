@@ -9,6 +9,9 @@ Cores (percentual do SLA já consumido):
   verde     menos da metade
   amarelo   metade ou mais, ainda no prazo
   vermelho  prazo vencido
+
+Solicitações com aprovação (coordenador e gerente): o SLA da TI só começa quando a última
+aprovação é dada. Enquanto isso o chamado aparece como "Aguardando aprovação".
 """
 from __future__ import annotations
 
@@ -114,6 +117,7 @@ class SituacaoSLA:
     consumidas: float       # horas úteis já usadas
     prazo: datetime | None
     encerrado: bool         # chamado resolvido/fechado: SLA congelado no momento da solução
+    aguardando_aprovacao: bool = False  # o SLA ainda não começou
 
     @property
     def percentual(self) -> int:
@@ -125,12 +129,16 @@ class SituacaoSLA:
 
     @property
     def rotulo(self) -> str:
+        if self.aguardando_aprovacao:
+            return "Aguardando aprovação"
         if self.encerrado:
             return "Cumprido" if self.cor != VERMELHO else "Vencido"
         return {VERDE: "No prazo", AMARELO: "Atenção", VERMELHO: "Vencido"}[self.cor]
 
     @property
     def texto_restante(self) -> str:
+        if self.aguardando_aprovacao:
+            return "o SLA começa depois da aprovação"
         if self.cor == VERMELHO:
             return f"vencido há {_horas(self.consumidas - self.horas)} úteis"
         return f"faltam {_horas(self.restantes)} úteis"
@@ -139,8 +147,12 @@ class SituacaoSLA:
 def situacao(chamado, agora: datetime | None = None) -> SituacaoSLA:
     horas = chamado.sla_horas or settings.SLA_PADRAO_HORAS
     encerrado = not chamado.aberto and chamado.resolvido_em is not None
+    inicio = getattr(chamado, "inicio_sla", chamado.criado_em)
+    if inicio is None:  # aguardando aprovação (ou reprovado): o SLA da TI não começou
+        return SituacaoSLA(cor=VERDE, horas=horas, consumidas=0.0, prazo=None, encerrado=encerrado,
+                           aguardando_aprovacao=not encerrado)
     fim = chamado.resolvido_em if encerrado else (agora or timezone.now())
-    consumidas = horas_uteis_entre(chamado.criado_em, fim)
+    consumidas = horas_uteis_entre(inicio, fim)
     if consumidas >= horas:
         cor = VERMELHO
     elif consumidas >= horas / 2:

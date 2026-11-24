@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Chamado, EventoChamado, Feriado, PesquisaSatisfacao
+from .models import Aprovacao, Chamado, EventoChamado, Feriado, PesquisaSatisfacao
 
 
 class EventoInline(admin.TabularInline):
@@ -11,6 +11,17 @@ class EventoInline(admin.TabularInline):
     readonly_fields = fields
 
 
+class AprovacaoInline(admin.TabularInline):
+    model = Aprovacao
+    extra = 0
+    can_delete = False
+    fields = ("nivel", "nome", "email", "situacao", "comentario", "decidida_em", "registrada_por", "enviada_em")
+    readonly_fields = fields
+
+    def has_add_permission(self, request, obj=None):
+        return False  # criadas pelo assistente; decididas pelo link do aprovador ou pelo painel
+
+
 @admin.register(Chamado)
 class ChamadoAdmin(admin.ModelAdmin):
     list_display = ("protocolo", "nome_colaborador", "setor", "centro_custo", "categoria", "prioridade", "status",
@@ -18,8 +29,8 @@ class ChamadoAdmin(admin.ModelAdmin):
     list_filter = ("status", "prioridade", "canal", "fora_do_horario", "categoria", "centro_custo", "criado_em")
     search_fields = ("protocolo", "nome_colaborador", "contato", "setor", "centro_custo", "descricao", "resumo")
     readonly_fields = ("protocolo", "conversa", "colaborador", "canal", "resumo", "criado_em",
-                       "atualizado_em", "resolvido_em", "sla_horas", "prazo_sla")
-    inlines = [EventoInline]
+                       "atualizado_em", "resolvido_em", "sla_horas", "prazo_sla", "exige_aprovacao", "aprovado_em")
+    inlines = [AprovacaoInline, EventoInline]
 
     @admin.display(description="SLA")
     def situacao_sla(self, obj):

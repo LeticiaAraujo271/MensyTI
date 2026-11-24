@@ -30,6 +30,7 @@ class Command(BaseCommand):
                         "palavras_chave": ", ".join(ori.get("palavras_chave", [])),
                         "prioridade": ori.get("prioridade", "media"),
                         "abre_chamado": ori.get("abre_chamado", False),
+                        "exige_aprovacao": ori.get("exige_aprovacao", False),
                         "ordem": j,
                     },
                 )

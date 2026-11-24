@@ -1,7 +1,7 @@
 """
 TicketService: abertura e ciclo de vida dos chamados.
 
-Ciclo: aberto -> em_fila -> em_atendimento <-> aguardando_usuario -> resolvido -> fechado
+Ciclo: aberto -> [aguardando_aprovacao: coordenador -> gerente] -> em_fila -> em_atendimento <-> aguardando_usuario -> resolvido -> fechado
        (resolvido/fechado podem ser reabertos por quem tem permissão: volta para em_fila)
 """
 from __future__ import annotations
@@ -28,6 +28,8 @@ PRIORIDADE_POR_NOME = {
 S = Chamado.Status
 TRANSICOES = {
     S.ABERTO: {S.EM_FILA, S.EM_ATENDIMENTO},
+    # Sai daqui só pelas aprovações (apps/chamados/aprovacoes.py): aprovado -> em_fila, reprovado -> fechado.
+    S.AGUARDANDO_APROVACAO: set(),
     S.EM_FILA: {S.EM_ATENDIMENTO, S.AGUARDANDO_USUARIO, S.RESOLVIDO},
     S.EM_ATENDIMENTO: {S.EM_FILA, S.AGUARDANDO_USUARIO, S.RESOLVIDO},
     S.AGUARDANDO_USUARIO: {S.EM_ATENDIMENTO, S.RESOLVIDO},
@@ -42,7 +44,7 @@ class TransicaoInvalida(Exception):
 
 class TicketService:
     def abrir(self, conversa, *, categoria="", orientacao="", prioridade="media", motivo="",
-              descricao="", resumo="", fora_do_horario=False) -> Chamado:
+              descricao="", resumo="", fora_do_horario=False, aprovadores=None) -> Chamado:
         """Abre um chamado para a conversa. Se ela já tem um chamado aberto, reaproveita (sem duplicar)."""
         existente = conversa.chamados.filter(status__in=Chamado.ABERTOS).first() if conversa.pk else None
         if existente:
@@ -67,13 +69,19 @@ class TicketService:
             fora_do_horario=fora_do_horario,
         )
         chamado.protocolo = f"TI-{chamado.criado_em.year}-{chamado.pk:06d}"
-        chamado.status = S.EM_FILA
+        chamado.exige_aprovacao = bool(aprovadores)
+        chamado.status = S.AGUARDANDO_APROVACAO if aprovadores else S.EM_FILA
         self._definir_sla(chamado)
-        chamado.save(update_fields=["protocolo", "status", "sla_horas", "prazo_sla"])
+        chamado.save(update_fields=["protocolo", "status", "sla_horas", "prazo_sla", "exige_aprovacao"])
         self._evento(chamado, EventoChamado.Tipo.ABERTO,
                      f"Aberto pelo assistente ({conversa.get_canal_display()}). Motivo: {motivo}"
                      + (" | Fora do horário de atendimento." if fora_do_horario else "")
-                     + f" | SLA: {chamado.sla_horas}h úteis.")
+                     + f" | SLA: {chamado.sla_horas}h úteis"
+                     + (", a partir da aprovação." if aprovadores else "."))
+        if aprovadores:
+            from . import aprovacoes
+
+            aprovacoes.criar(chamado, aprovadores)
         self._enviar_ao_sistema_externo(chamado)
         return chamado
 
@@ -90,6 +98,12 @@ class TicketService:
     def mudar_status(self, chamado: Chamado, novo: str, usuario=None, nota: str = "") -> Chamado:
         if novo == chamado.status:
             return chamado
+        if chamado.status == S.AGUARDANDO_APROVACAO:
+            raise TransicaoInvalida("Aguardando aprovação do coordenador e do gerente da área: "
+                                    "o chamado entra na fila sozinho quando os dois aprovarem.")
+        if chamado.exige_aprovacao and chamado.aprovado_em is None and novo == S.EM_FILA:
+            raise TransicaoInvalida("Esta solicitação foi reprovada (não tem as aprovações). "
+                                    "O colaborador precisa abrir uma nova solicitação.")
         if novo not in TRANSICOES.get(chamado.status, set()):
             raise TransicaoInvalida(f"Não é possível ir de '{chamado.get_status_display()}' para '{S(novo).label}'.")
         reabrindo = chamado.status in (S.RESOLVIDO, S.FECHADO)
@@ -105,6 +119,8 @@ class TicketService:
         solucao = (solucao or "").strip()
         if not solucao:
             raise TransicaoInvalida("Descreva a solução antes de resolver o chamado.")
+        if chamado.status == S.AGUARDANDO_APROVACAO:
+            raise TransicaoInvalida("Aguarde as aprovações do coordenador e do gerente da área antes de executar.")
         if chamado.status not in TRANSICOES or S.RESOLVIDO not in TRANSICOES[chamado.status]:
             raise TransicaoInvalida(f"Chamado '{chamado.get_status_display()}' não pode ser resolvido.")
         chamado.status = S.RESOLVIDO
@@ -158,7 +174,8 @@ class TicketService:
     # --- auxiliares -------------------------------------------------------
     def _definir_sla(self, chamado: Chamado) -> None:
         chamado.sla_horas = sla_da_categoria(chamado.categoria)
-        chamado.prazo_sla = somar_horas_uteis(chamado.criado_em, chamado.sla_horas)
+        inicio = chamado.inicio_sla  # None = aguardando aprovação: o prazo é calculado ao aprovar
+        chamado.prazo_sla = somar_horas_uteis(inicio, chamado.sla_horas) if inicio else None
 
     def _evento(self, chamado, tipo, descricao, autor=None):
         return EventoChamado.objects.create(chamado=chamado, tipo=tipo, descricao=descricao, autor=autor)

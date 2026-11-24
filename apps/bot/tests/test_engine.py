@@ -130,7 +130,7 @@ class NaoResolvido(Base):
     def test_solicitacao_de_acesso_sempre_abre_chamado(self):
         estado, rs = self.falar("7", "1")
         self.assertEqual(estado.etapa, e.DESCREVER)
-        self.assertIn("gestor", rs[-1].respostas[0])
+        self.assertIn("coordenador", rs[-1].respostas[0])
 
 
 class Critico(Base):
@@ -238,3 +238,51 @@ class CentroDeCusto(unittest.TestCase):
         self.assertIn("Olá, Maria", rs[0].respostas[0])
         self.assertIn("centro de custo", rs[0].respostas[1])
         self.assertEqual((estado.etapa, estado.dados["centro_custo"]), (e.MENU, "2030"))
+
+
+class Aprovacao(Base):
+    """Criação de usuário e liberação de acesso: pede coordenador e gerente da área."""
+
+    APROVADORES = ("Carlos Souza", "carlos@empresa.com.br", "Gina Prado", "gina@empresa.com.br")
+
+    def test_liberar_acesso_pede_coordenador_e_gerente(self):
+        estado, rs = self.falar("7", "1", "Acesso de leitura na pasta Financeiro")
+        self.assertEqual(estado.etapa, e.APROVADORES)
+        self.assertIn("duas aprovações", rs[-1].respostas[0])
+        self.assertIn("coordenador", rs[-1].respostas[1])
+        estado, rs = conversa(*self.APROVADORES, estado=estado)
+        self.assertIn("gerente da área", rs[1].respostas[0])
+        self.assertEqual(estado.etapa, e.HUMANO)
+        params = acao(rs[-1], e.ACAO_ABRIR_CHAMADO).params
+        self.assertEqual(params["aprovadores"], [
+            {"nivel": 1, "nome": "Carlos Souza", "email": "carlos@empresa.com.br"},
+            {"nivel": 2, "nome": "Gina Prado", "email": "gina@empresa.com.br"},
+        ])
+        self.assertIn("Aprovador 2 (gerente da área): Gina Prado", params["resumo"])
+        self.assertIn("seguiu para aprovação", rs[-1].respostas[0])
+        self.assertNotIn("aprovadores", estado.dados)
+
+    def test_criacao_de_usuario_tambem_exige_aprovacao(self):
+        estado, _ = self.falar("7", "2", "Usuário para o João, que entra dia 01/12 no Comercial")
+        self.assertEqual(estado.etapa, e.APROVADORES)
+
+    def test_nao_pode_aprovar_a_propria_solicitacao(self):
+        estado, rs = self.falar("7", "1", "Acesso ao ERP", "Maria Silva", "maria@empresa.com.br")
+        self.assertEqual(estado.etapa, e.APROVADORES)
+        self.assertIn("própria solicitação", rs[-1].respostas[0])
+
+    def test_coordenador_e_gerente_precisam_ser_pessoas_diferentes(self):
+        estado, rs = self.falar("7", "1", "Acesso ao ERP", "Carlos Souza", "carlos@empresa.com.br",
+                                "Carlos Souza", "carlos@empresa.com.br")
+        self.assertEqual(estado.etapa, e.APROVADORES)
+        self.assertIn("pessoas diferentes", rs[-1].respostas[0])
+
+    def test_email_do_aprovador_invalido(self):
+        estado, rs = self.falar("7", "1", "Acesso ao ERP", "Carlos Souza", "carlos")
+        self.assertEqual(estado.etapa, e.APROVADORES)
+        self.assertIn("e-mail corporativo* do seu coordenador", rs[-1].respostas[0])
+
+    def test_outras_orientacoes_nao_pedem_aprovacao(self):
+        estado, rs = self.falar("3", "1", "2", "Cabo conectado e continua sem rede")
+        self.assertEqual(estado.etapa, e.HUMANO)
+        self.assertNotIn("aprovadores", acao(rs[-1], e.ACAO_ABRIR_CHAMADO).params)

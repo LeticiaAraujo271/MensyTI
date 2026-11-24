@@ -1,0 +1,67 @@
+{% load static %}<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Aprovação {{ chamado.protocolo }} · {{ nome_central|default:"Central de TI" }}</title>
+  <link rel="stylesheet" href="{% static 'painel/painel.css' %}">
+</head>
+<body>
+  <header class="barra">
+    <span class="logo">{% if logo_marca %}<img src="{% static logo_marca %}" alt="">{% endif %}{{ nome_central|default:"Central de TI" }}</span>
+  </header>
+  <main class="conteudo aprov-pagina">
+    <section class="cartao">
+      <h1>Aprovação · {{ chamado.protocolo }}</h1>
+      <p>Você é o <b>{{ aprovacao.get_nivel_display|lower }}</b> que precisa aprovar este pedido, {{ aprovacao.nome }}.</p>
+
+      <dl class="dados">
+        <dt>Solicitante</dt><dd>{{ chamado.nome_colaborador|default:"—" }}</dd>
+        <dt>Setor</dt><dd>{{ chamado.setor|default:"—" }}</dd>
+        <dt>Centro de custo</dt><dd>{{ chamado.centro_custo|default:"—" }}</dd>
+        <dt>E-mail</dt><dd>{{ chamado.contato|default:"—" }}</dd>
+        <dt>Pedido</dt><dd>{{ chamado.orientacao|default:chamado.categoria|default:"—" }}</dd>
+        <dt>Aberto em</dt><dd>{{ chamado.criado_em|date:"d/m/Y H:i" }}</dd>
+      </dl>
+      <h3>Descrição do pedido</h3>
+      <p class="pre">{{ chamado.descricao|default:"—" }}</p>
+
+      <h3>Aprovações</h3>
+      <ol class="aprovacoes">
+        {% for n in niveis %}
+        <li class="{{ n.situacao }}">
+          <div class="linha-aprov">
+            <span>{{ n.nivel }}. <b>{{ n.get_nivel_display }}</b>: {{ n.nome }}</span>
+            <span class="selo-aprov {{ n.situacao }}">{% if n.situacao == "aprovada" %}✅{% elif n.situacao == "reprovada" %}❌{% elif n.situacao == "pendente" %}⏳{% else %}—{% endif %} {{ n.get_situacao_display }}{% if n.decidida_em %} · {{ n.decidida_em|date:"d/m/Y H:i" }}{% endif %}</span>
+          </div>
+          {% if n.comentario %}<small>{{ n.comentario }}</small>{% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+
+      {% if erro %}<div class="aviso error" role="alert">{{ erro }}</div>{% endif %}
+
+      {% if da_vez %}
+      <form method="post">{% csrf_token %}
+        <label>Comentário <small>(obrigatório para reprovar)</small>
+          <textarea name="comentario" rows="3" maxlength="1000" placeholder="Ex.: aprovado somente leitura; ou o motivo da reprovação">{{ comentario }}</textarea>
+        </label>
+        <div class="aprov-botoes">
+          <button type="submit" name="decisao" value="aprovar" class="sucesso">✅ Aprovar</button>
+          <button type="submit" name="decisao" value="reprovar" class="perigo">❌ Reprovar</button>
+        </div>
+      </form>
+      {% elif aprovacao.situacao == "aprovada" %}
+      <div class="aviso success">✅ Você aprovou este pedido em {{ aprovacao.decidida_em|date:"d/m/Y H:i" }}. Obrigado!</div>
+      {% elif aprovacao.situacao == "reprovada" %}
+      <div class="aviso">❌ Você reprovou este pedido em {{ aprovacao.decidida_em|date:"d/m/Y H:i" }}. O solicitante foi avisado.</div>
+      {% elif aprovacao.situacao == "cancelada" %}
+      <div class="aviso">Este pedido foi reprovado em uma etapa anterior. Nada a fazer.</div>
+      {% else %}
+      <div class="aviso">⏳ Ainda não é a sua vez: o pedido aguarda a aprovação da etapa anterior.</div>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>

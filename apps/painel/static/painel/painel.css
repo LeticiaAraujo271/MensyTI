@@ -119,3 +119,21 @@ a.botao { display: inline-block; padding: 7px 14px; border-radius: 8px; border: 
           background: var(--primaria); color: var(--primaria-texto); text-decoration: none; white-space: nowrap; }
 a.botao:hover { background: var(--primaria-forte); border-color: var(--primaria-forte); }
 .teste { color: var(--p2); font-weight: 600; }
+/* Aprovações (coordenador e gerente da área) */
+.sla.aprovacao, .status.aguardando_aprovacao { color: var(--sla-amarelo); background: var(--sla-amarelo-fundo); }
+.status.aguardando_aprovacao { border-color: var(--sla-amarelo); }
+.aprovacoes { list-style: none; padding: 0; margin: 0 0 12px; }
+.aprovacoes li { padding: 10px 12px; margin-bottom: 8px; border: 1px solid var(--borda); border-left-width: 5px; border-radius: 8px; }
+.aprovacoes li.pendente { border-left-color: var(--sla-amarelo); }
+.aprovacoes li.aprovada { border-left-color: var(--sla-verde); }
+.aprovacoes li.reprovada { border-left-color: var(--sla-vermelho); }
+.aprovacoes li.cancelada { opacity: .7; }
+.aprovacoes .linha-aprov { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; }
+.selo-aprov { font-size: 12px; font-weight: 600; }
+.selo-aprov.aprovada { color: var(--sla-verde); } .selo-aprov.reprovada { color: var(--sla-vermelho); }
+.selo-aprov.pendente { color: var(--sla-amarelo); }
+.link-aprov { display: flex; gap: 6px; margin-top: 6px; }
+.link-aprov input { flex: 1; font-size: 12px; }
+.aprov-pagina { max-width: 640px; margin: 32px auto; }
+.aprov-botoes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+button.perigo { background: var(--sla-vermelho); border-color: var(--sla-vermelho); color: #fff; }

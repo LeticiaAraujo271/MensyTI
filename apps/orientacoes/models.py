@@ -48,6 +48,11 @@ class Orientacao(models.Model):
         "sempre abre chamado", default=False,
         help_text="Mostra a orientação e abre o chamado (ex.: solicitação de acesso, que a TI precisa executar).",
     )
+    exige_aprovacao = models.BooleanField(
+        "exige aprovação", default=False,
+        help_text="O assistente pede o coordenador e o gerente da área do colaborador. O chamado só entra "
+                  "na fila da TI depois que os dois aprovarem (nessa ordem). Ex.: criação de usuário, liberar acesso.",
+    )
     ordem = models.PositiveSmallIntegerField(default=0)
     ativa = models.BooleanField(default=True)
     atualizada_em = models.DateTimeField(auto_now=True)

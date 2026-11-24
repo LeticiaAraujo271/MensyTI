@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Def_DiarioTestes" targetNamespace="http://mensori.com.br/central-ti/bpmn" exporter="Central de TI" exporterVersion="1.0">
+  <collaboration id="Colab_DiarioTestes">
+    <participant id="Pool_Testes" name="Diário de testes: Central de TI (23/11/2026)" processRef="Proc_DiarioTestes"/>
+  </collaboration>
+  <process id="Proc_DiarioTestes" name="Diário de testes" isExecutable="false">
+    <laneSet id="LaneSet_1">
+      <lane id="Lane_Dev" name="Desenvolvedor">
+        <flowNodeRef>S</flowNodeRef>
+        <flowNodeRef>T1</flowNodeRef>
+        <flowNodeRef>T9</flowNodeRef>
+        <flowNodeRef>G4</flowNodeRef>
+        <flowNodeRef>T10</flowNodeRef>
+        <flowNodeRef>T11</flowNodeRef>
+        <flowNodeRef>G5</flowNodeRef>
+        <flowNodeRef>T14</flowNodeRef>
+        <flowNodeRef>T15</flowNodeRef>
+        <flowNodeRef>T16</flowNodeRef>
+        <flowNodeRef>E</flowNodeRef>
+      </lane>
+      <lane id="Lane_Exec" name="Django (executor de testes)">
+        <flowNodeRef>T2</flowNodeRef>
+        <flowNodeRef>G1</flowNodeRef>
+        <flowNodeRef>P1</flowNodeRef>
+        <flowNodeRef>P2</flowNodeRef>
+        <flowNodeRef>P3</flowNodeRef>
+        <flowNodeRef>P4</flowNodeRef>
+        <flowNodeRef>P5</flowNodeRef>
+        <flowNodeRef>G2</flowNodeRef>
+        <flowNodeRef>T8</flowNodeRef>
+        <flowNodeRef>G3</flowNodeRef>
+      </lane>
+      <lane id="Lane_Serv" name="Servidor local (127.0.0.1:8000)">
+        <flowNodeRef>T12</flowNodeRef>
+        <flowNodeRef>T13</flowNodeRef>
+        <flowNodeRef>G6</flowNodeRef>
+      </lane>
+    </laneSet>
+    <startEvent id="S" name="Projeto instalado ou alterado">
+      <outgoing>f1</outgoing>
+    </startEvent>
+    <userTask id="T1" name="Executar a suíte de testes (manage.py test apps)">
+      <incoming>f1</incoming>
+      <incoming>f22</incoming>
+      <outgoing>f2</outgoing>
+    </userTask>
+    <serviceTask id="T2" name="Criar o banco de teste (SQLite)">
+      <incoming>f2</incoming>
+      <outgoing>f3</outgoing>
+    </serviceTask>
+    <parallelGateway id="G1" name="">
+      <incoming>f3</incoming>
+      <outgoing>f4</outgoing>
+      <outgoing>f5</outgoing>
+      <outgoing>f6</outgoing>
+      <outgoing>f7</outgoing>
+      <outgoing>f8</outgoing>
+    </parallelGateway>
+    <serviceTask id="P1" name="Testar o motor da conversa (25 testes)">
+      <incoming>f4</incoming>
+      <outgoing>f9</outgoing>
+    </serviceTask>
+    <serviceTask id="P2" name="Testar o orquestrador (11 testes)">
+      <incoming>f5</incoming>
+      <outgoing>f10</outgoing>
+    </serviceTask>
+    <serviceTask id="P3" name="Testar o portal web (7 testes)">
+      <incoming>f6</incoming>
+      <outgoing>f11</outgoing>
+    </serviceTask>
+    <serviceTask id="P4" name="Testar o painel de TI (4 testes)">
+      <incoming>f7</incoming>
+      <outgoing>f12</outgoing>
+    </serviceTask>
+    <serviceTask id="P5" name="Testar WhatsApp / Digisac (8 testes)">
+      <incoming>f8</incoming>
+      <outgoing>f13</outgoing>
+    </serviceTask>
+    <parallelGateway id="G2" name="">
+      <incoming>f9</incoming>
+      <incoming>f10</incoming>
+      <incoming>f11</incoming>
+      <incoming>f12</incoming>
+      <incoming>f13</incoming>
+      <outgoing>f14</outgoing>
+    </parallelGateway>
+    <serviceTask id="T8" name="Destruir o banco de teste e gerar o resultado">
+      <incoming>f14</incoming>
+      <outgoing>f15</outgoing>
+    </serviceTask>
+    <exclusiveGateway id="G3" name="Todos os testes aprovados?">
+      <incoming>f15</incoming>
+      <outgoing>f16</outgoing>
+      <outgoing>f23</outgoing>
+    </exclusiveGateway>
+    <userTask id="T9" name="Analisar o erro e identificar a causa">
+      <incoming>f16</incoming>
+      <incoming>f26</incoming>
+      <outgoing>f17</outgoing>
+    </userTask>
+    <exclusiveGateway id="G4" name="Onde está a causa?">
+      <incoming>f17</incoming>
+      <outgoing>f18</outgoing>
+      <outgoing>f19</outgoing>
+    </exclusiveGateway>
+    <userTask id="T10" name="Corrigir o teste">
+      <incoming>f18</incoming>
+      <outgoing>f20</outgoing>
+    </userTask>
+    <userTask id="T11" name="Corrigir o código do sistema">
+      <incoming>f19</incoming>
+      <outgoing>f21</outgoing>
+    </userTask>
+    <exclusiveGateway id="G5" name="">
+      <incoming>f20</incoming>
+      <incoming>f21</incoming>
+      <outgoing>f22</outgoing>
+    </exclusiveGateway>
+    <serviceTask id="T12" name="Testar o chat de ponta a ponta pelo HTTP">
+      <incoming>f23</incoming>
+      <outgoing>f24</outgoing>
+    </serviceTask>
+    <serviceTask id="T13" name="Testar o painel (login, fila, detalhe, arquivos estáticos)">
+      <incoming>f24</incoming>
+      <outgoing>f25</outgoing>
+    </serviceTask>
+    <exclusiveGateway id="G6" name="Respondeu como esperado?">
+      <incoming>f25</incoming>
+      <outgoing>f26</outgoing>
+      <outgoing>f27</outgoing>
+    </exclusiveGateway>
+    <userTask id="T14" name="Rodar a execução final detalhada (-v 2)">
+      <incoming>f27</incoming>
+      <outgoing>f28</outgoing>
+    </userTask>
+    <userTask id="T15" name="Registrar o diário de testes e o log">
+      <incoming>f28</incoming>
+      <outgoing>f29</outgoing>
+    </userTask>
+    <userTask id="T16" name="Conferir os critérios de aceite">
+      <incoming>f29</incoming>
+      <outgoing>f30</outgoing>
+    </userTask>
+    <endEvent id="E" name="Diário de testes concluído">
+      <incoming>f30</incoming>
+    </endEvent>
+    <sequenceFlow id="f1" sourceRef="S" targetRef="T1"/>
+    <sequenceFlow id="f2" sourceRef="T1" targetRef="T2"/>
+    <sequenceFlow id="f3" sourceRef="T2" targetRef="G1"/>
+    <sequenceFlow id="f4" sourceRef="G1" targetRef="P1"/>
+    <sequenceFlow id="f5" sourceRef="G1" targetRef="P2"/>
+    <sequenceFlow id="f6" sourceRef="G1" targetRef="P3"/>
+    <sequenceFlow id="f7" sourceRef="G1" targetRef="P4"/>
+    <sequenceFlow id="f8" sourceRef="G1" targetRef="P5"/>
+    <sequenceFlow id="f9" sourceRef="P1" targetRef="G2"/>
+    <sequenceFlow id="f10" sourceRef="P2" targetRef="G2"/>
+    <sequenceFlow id="f11" sourceRef="P3" targetRef="G2"/>
+    <sequenceFlow id="f12" sourceRef="P4" targetRef="G2"/>
+    <sequenceFlow id="f13" sourceRef="P5" targetRef="G2"/>
+    <sequenceFlow id="f14" sourceRef="G2" targetRef="T8"/>
+    <sequenceFlow id="f15" sourceRef="T8" targetRef="G3"/>
+    <sequenceFlow id="f16" name="Não" sourceRef="G3" targetRef="T9"/>
+    <sequenceFlow id="f17" sourceRef="T9" targetRef="G4"/>
+    <sequenceFlow id="f18" name="No teste" sourceRef="G4" targetRef="T10"/>
+    <sequenceFlow id="f19" name="No sistema" sourceRef="G4" targetRef="T11"/>
+    <sequenceFlow id="f20" sourceRef="T10" targetRef="G5"/>
+    <sequenceFlow id="f21" sourceRef="T11" targetRef="G5"/>
+    <sequenceFlow id="f22" name="Executar de novo" sourceRef="G5" targetRef="T1"/>
+    <sequenceFlow id="f23" name="Sim" sourceRef="G3" targetRef="T12"/>
+    <sequenceFlow id="f24" sourceRef="T12" targetRef="T13"/>
+    <sequenceFlow id="f25" sourceRef="T13" targetRef="G6"/>
+    <sequenceFlow id="f26" name="Não" sourceRef="G6" targetRef="T9"/>
+    <sequenceFlow id="f27" name="Sim" sourceRef="G6" targetRef="T14"/>
+    <sequenceFlow id="f28" sourceRef="T14" targetRef="T15"/>
+    <sequenceFlow id="f29" sourceRef="T15" targetRef="T16"/>
+    <sequenceFlow id="f30" sourceRef="T16" targetRef="E"/>
+    <textAnnotation id="A1"><text>Execução 2: 54 aprovados e 1 erro (test_resposta_do_analista_aparece_no_chat). A causa estava no próprio teste, que foi corrigido.</text></textAnnotation>
+    <association id="as_A1" sourceRef="T9" targetRef="A1"/>
+    <textAnnotation id="A2"><text>Execução 4: conversa completa e chamado TI-2026-000001 aberto</text></textAnnotation>
+    <association id="as_A2" sourceRef="T12" targetRef="A2"/>
+    <textAnnotation id="A3"><text>Resultado final: 55 de 55 testes aprovados (13,4 s)</text></textAnnotation>
+    <association id="as_A3" sourceRef="T16" targetRef="A3"/>
+  </process>
+  <bpmndi:BPMNDiagram id="Diagrama_1" name="Diário de testes">
+    <bpmndi:BPMNPlane id="Plano_1" bpmnElement="Colab_DiarioTestes">
+      <bpmndi:BPMNShape id="Pool_Testes_di" bpmnElement="Pool_Testes" isHorizontal="true"><dc:Bounds x="40" y="40" width="2010" height="1040"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Dev_di" bpmnElement="Lane_Dev" isHorizontal="true"><dc:Bounds x="70" y="40" width="1980" height="300"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Exec_di" bpmnElement="Lane_Exec" isHorizontal="true"><dc:Bounds x="70" y="340" width="1980" height="520"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Serv_di" bpmnElement="Lane_Serv" isHorizontal="true"><dc:Bounds x="70" y="860" width="1980" height="220"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_di" bpmnElement="S"><dc:Bounds x="110" y="172" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T1_di" bpmnElement="T1"><dc:Bounds x="190" y="150" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T2_di" bpmnElement="T2"><dc:Bounds x="190" y="560" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="G1_di" bpmnElement="G1"><dc:Bounds x="360" y="575" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="P1_di" bpmnElement="P1"><dc:Bounds x="460" y="360" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="P2_di" bpmnElement="P2"><dc:Bounds x="460" y="460" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="P3_di" bpmnElement="P3"><dc:Bounds x="460" y="560" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="P4_di" bpmnElement="P4"><dc:Bounds x="460" y="660" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="P5_di" bpmnElement="P5"><dc:Bounds x="460" y="760" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="G2_di" bpmnElement="G2"><dc:Bounds x="630" y="575" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T8_di" bpmnElement="T8"><dc:Bounds x="730" y="560" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="G3_di" bpmnElement="G3" isMarkerVisible="true"><dc:Bounds x="900" y="575" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T9_di" bpmnElement="T9"><dc:Bounds x="865" y="150" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="G4_di" bpmnElement="G4" isMarkerVisible="true"><dc:Bounds x="1040" y="165" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T10_di" bpmnElement="T10"><dc:Bounds x="1140" y="60" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T11_di" bpmnElement="T11"><dc:Bounds x="1140" y="230" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="G5_di" bpmnElement="G5" isMarkerVisible="true"><dc:Bounds x="1290" y="165" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T12_di" bpmnElement="T12"><dc:Bounds x="1010" y="920" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T13_di" bpmnElement="T13"><dc:Bounds x="1180" y="920" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="G6_di" bpmnElement="G6" isMarkerVisible="true"><dc:Bounds x="1350" y="935" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T14_di" bpmnElement="T14"><dc:Bounds x="1460" y="150" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T15_di" bpmnElement="T15"><dc:Bounds x="1630" y="150" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T16_di" bpmnElement="T16"><dc:Bounds x="1800" y="150" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E_di" bpmnElement="E"><dc:Bounds x="1960" y="172" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1">
+        <di:waypoint x="146" y="190"/>
+        <di:waypoint x="190" y="190"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2">
+        <di:waypoint x="250" y="230"/>
+        <di:waypoint x="250" y="560"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3">
+        <di:waypoint x="310" y="600"/>
+        <di:waypoint x="360" y="600"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4">
+        <di:waypoint x="385" y="575"/>
+        <di:waypoint x="385" y="400"/>
+        <di:waypoint x="460" y="400"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5">
+        <di:waypoint x="385" y="575"/>
+        <di:waypoint x="385" y="500"/>
+        <di:waypoint x="460" y="500"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6">
+        <di:waypoint x="410" y="600"/>
+        <di:waypoint x="460" y="600"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f7_di" bpmnElement="f7">
+        <di:waypoint x="385" y="625"/>
+        <di:waypoint x="385" y="700"/>
+        <di:waypoint x="460" y="700"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f8_di" bpmnElement="f8">
+        <di:waypoint x="385" y="625"/>
+        <di:waypoint x="385" y="800"/>
+        <di:waypoint x="460" y="800"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f9_di" bpmnElement="f9">
+        <di:waypoint x="580" y="400"/>
+        <di:waypoint x="655" y="400"/>
+        <di:waypoint x="655" y="575"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f10_di" bpmnElement="f10">
+        <di:waypoint x="580" y="500"/>
+        <di:waypoint x="655" y="500"/>
+        <di:waypoint x="655" y="575"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f11_di" bpmnElement="f11">
+        <di:waypoint x="580" y="600"/>
+        <di:waypoint x="630" y="600"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f12_di" bpmnElement="f12">
+        <di:waypoint x="580" y="700"/>
+        <di:waypoint x="655" y="700"/>
+        <di:waypoint x="655" y="625"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f13_di" bpmnElement="f13">
+        <di:waypoint x="580" y="800"/>
+        <di:waypoint x="655" y="800"/>
+        <di:waypoint x="655" y="625"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f14_di" bpmnElement="f14">
+        <di:waypoint x="680" y="600"/>
+        <di:waypoint x="730" y="600"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f15_di" bpmnElement="f15">
+        <di:waypoint x="850" y="600"/>
+        <di:waypoint x="900" y="600"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f16_di" bpmnElement="f16">
+        <di:waypoint x="925" y="575"/>
+        <di:waypoint x="925" y="230"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f17_di" bpmnElement="f17">
+        <di:waypoint x="985" y="190"/>
+        <di:waypoint x="1040" y="190"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f18_di" bpmnElement="f18">
+        <di:waypoint x="1065" y="165"/>
+        <di:waypoint x="1065" y="100"/>
+        <di:waypoint x="1140" y="100"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f19_di" bpmnElement="f19">
+        <di:waypoint x="1065" y="215"/>
+        <di:waypoint x="1065" y="270"/>
+        <di:waypoint x="1140" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f20_di" bpmnElement="f20">
+        <di:waypoint x="1260" y="100"/>
+        <di:waypoint x="1315" y="100"/>
+        <di:waypoint x="1315" y="165"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f21_di" bpmnElement="f21">
+        <di:waypoint x="1260" y="270"/>
+        <di:waypoint x="1315" y="270"/>
+        <di:waypoint x="1315" y="215"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f22_di" bpmnElement="f22">
+        <di:waypoint x="1340" y="190"/>
+        <di:waypoint x="1360" y="190"/>
+        <di:waypoint x="1360" y="50"/>
+        <di:waypoint x="250" y="50"/>
+        <di:waypoint x="250" y="150"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f23_di" bpmnElement="f23">
+        <di:waypoint x="925" y="625"/>
+        <di:waypoint x="925" y="960"/>
+        <di:waypoint x="1010" y="960"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f24_di" bpmnElement="f24">
+        <di:waypoint x="1130" y="960"/>
+        <di:waypoint x="1180" y="960"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f25_di" bpmnElement="f25">
+        <di:waypoint x="1300" y="960"/>
+        <di:waypoint x="1350" y="960"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f26_di" bpmnElement="f26">
+        <di:waypoint x="1375" y="935"/>
+        <di:waypoint x="1375" y="320"/>
+        <di:waypoint x="955" y="320"/>
+        <di:waypoint x="955" y="230"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f27_di" bpmnElement="f27">
+        <di:waypoint x="1400" y="960"/>
+        <di:waypoint x="1520" y="960"/>
+        <di:waypoint x="1520" y="230"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f28_di" bpmnElement="f28">
+        <di:waypoint x="1580" y="190"/>
+        <di:waypoint x="1630" y="190"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f29_di" bpmnElement="f29">
+        <di:waypoint x="1750" y="190"/>
+        <di:waypoint x="1800" y="190"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f30_di" bpmnElement="f30">
+        <di:waypoint x="1920" y="190"/>
+        <di:waypoint x="1960" y="190"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="A1_di" bpmnElement="A1"><dc:Bounds x="560" y="65" width="280" height="75"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="as_A1_di" bpmnElement="as_A1">
+        <di:waypoint x="840" y="120"/>
+        <di:waypoint x="865" y="170"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="A2_di" bpmnElement="A2"><dc:Bounds x="1010" y="1012" width="290" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="as_A2_di" bpmnElement="as_A2">
+        <di:waypoint x="1070" y="1000"/>
+        <di:waypoint x="1070" y="1012"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="A3_di" bpmnElement="A3"><dc:Bounds x="1760" y="255" width="240" height="55"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="as_A3_di" bpmnElement="as_A3">
+        <di:waypoint x="1860" y="230"/>
+        <di:waypoint x="1860" y="255"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

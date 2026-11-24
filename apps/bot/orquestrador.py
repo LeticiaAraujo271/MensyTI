@@ -147,6 +147,20 @@ class ConversationOrchestrator:
         self._entregar(conversa, textos)
         return chamado
 
+    def avisar_colaborador(self, chamado: Chamado, texto: str) -> None:
+        """Mensagem do sistema para o colaborador (ex.: resultado de uma aprovação)."""
+        conversa = chamado.conversa
+        if conversa is None:
+            return
+        with transaction.atomic():
+            Mensagem.objects.create(conversa=conversa, autor=Mensagem.Autor.SISTEMA, texto=texto,
+                                    etapa=conversa.etapa)
+            if not chamado.aberto and conversa.ativa and conversa.etapa == engine.HUMANO:
+                # Solicitação reprovada: o atendimento termina; a próxima mensagem começa um novo.
+                conversa.etapa = engine.ENCERRADO
+                self._fechar(conversa, Conversa.Resultado.ESCALADA)
+        self._entregar(conversa, [texto])
+
     # ------------------------------------------------------------------
     # Auxiliares
     # ------------------------------------------------------------------

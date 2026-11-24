@@ -37,6 +37,51 @@
     </div>
     {% endwith %}
 
+    {% if aprovacoes %}
+    <h3>Aprovações</h3>
+    <ol class="aprovacoes">
+      {% for n in aprovacoes %}
+      <li class="{{ n.situacao }}">
+        <div class="linha-aprov">
+          <span>{{ n.nivel }}. <b>{{ n.get_nivel_display }}</b>: {{ n.nome }} &lt;{{ n.email }}&gt;</span>
+          <span class="selo-aprov {{ n.situacao }}">{% if n.situacao == "aprovada" %}✅{% elif n.situacao == "reprovada" %}❌{% elif n.vez %}⏳{% else %}·{% endif %} {% if n.vez %}Aguardando decisão{% else %}{{ n.get_situacao_display }}{% endif %}{% if n.decidida_em %} · {{ n.decidida_em|date:"d/m/Y H:i" }}{% endif %}</span>
+        </div>
+        {% if n.comentario %}<small>“{{ n.comentario }}”{% if n.registrada_por %} · registrado por {{ n.registrada_por.get_username }}{% endif %}</small>{% endif %}
+        {% if n.vez %}
+          <div class="link-aprov">
+            <label class="sr-only" for="link-{{ n.pk }}">Link de aprovação</label>
+            <input type="text" id="link-{{ n.pk }}" value="{{ n.link }}" readonly>
+            <button type="button" class="copiar" data-alvo="link-{{ n.pk }}">Copiar link</button>
+          </div>
+          <small>{% if n.enviada_em %}Enviado por e-mail em {{ n.enviada_em|date:"d/m/Y H:i" }}.{% elif email_aprovacao %}O e-mail ainda não foi enviado.{% else %}E-mail não configurado: copie o link e envie ao {{ n.get_nivel_display|lower }} pelo Teams ou e-mail.{% endif %}</small>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+    {% if chamado.status == S.AGUARDANDO_APROVACAO %}
+    <div class="acoes">
+      {% if email_aprovacao %}
+      <form method="post" action="{% url 'painel:acao' chamado.protocolo %}">{% csrf_token %}
+        <input type="hidden" name="acao" value="reenviar_aprovacao"><button type="submit">Reenviar e-mail</button>
+      </form>
+      {% endif %}
+    </div>
+    <details class="bloco">
+      <summary>Registrar decisão recebida por outro meio (e-mail, Teams)</summary>
+      <form method="post" action="{% url 'painel:acao' chamado.protocolo %}" class="bloco">{% csrf_token %}
+        <input type="hidden" name="acao" value="aprovacao">
+        <label>Como a decisão chegou <small>(obrigatório)</small>
+          <textarea name="comentario" rows="2" required maxlength="1000" placeholder="Ex.: aprovado por e-mail em 25/11 às 10h"></textarea>
+        </label>
+        <div class="aprov-botoes">
+          <button type="submit" name="decisao" value="aprovar" class="sucesso">Registrar aprovação</button>
+          <button type="submit" name="decisao" value="reprovar" class="perigo">Registrar reprovação</button>
+        </div>
+      </form>
+    </details>
+    {% endif %}
+    {% endif %}
+
     <h3>Descrição</h3>
     <p class="pre">{{ chamado.descricao|default:"—" }}</p>
     {% if chamado.solucao %}<h3>Solução</h3><p class="pre">{{ chamado.solucao }}</p>{% endif %}
@@ -96,7 +141,10 @@
       {% endif %}
     </div>
 
-    {% if chamado.aberto %}
+    {% if chamado.status == S.AGUARDANDO_APROVACAO %}
+    <p class="aviso">⏳ Aguardando aprovação: a TI só executa e resolve depois que o coordenador e o gerente
+      da área aprovarem. O chamado entra na fila sozinho, e o SLA começa a contar a partir daí.</p>
+    {% elif chamado.aberto %}
     <form method="post" action="{% url 'painel:acao' chamado.protocolo %}" class="bloco">{% csrf_token %}
       <input type="hidden" name="acao" value="resolver">
       <label>Registrar solução e resolver
@@ -139,6 +187,16 @@
 
 {% block scripts %}
 <script>
+(function () {
+  document.querySelectorAll("button.copiar").forEach(function (b) {
+    b.addEventListener("click", async function () {
+      const campo = document.getElementById(b.dataset.alvo);
+      try { await navigator.clipboard.writeText(campo.value); } catch (e) { campo.select(); document.execCommand("copy"); }
+      b.textContent = "Copiado ✓";
+      setTimeout(function () { b.textContent = "Copiar link"; }, 2000);
+    });
+  });
+})();
 (function () {
   // Mostra novas mensagens do colaborador sem recarregar a página.
   const caixa = document.getElementById("conversa");
