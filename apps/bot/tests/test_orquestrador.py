@@ -10,7 +10,7 @@ from apps.bot import engine
 from apps.bot.models import Avaliacao, Colaborador, Conversa, Mensagem, OrientacaoVista
 from apps.bot.orquestrador import ConversationOrchestrator
 from apps.canais import WebChannel, WhatsAppChannel
-from apps.chamados.models import Chamado
+from apps.chamados.models import Chamado, PesquisaSatisfacao
 from apps.chamados.servicos import TicketService
 
 CENTRAL_TESTE = {"NOME": "Central de TI", "IDENTIFICACAO": ["nome", "setor", "email"],
@@ -136,13 +136,87 @@ class OrquestradorTest(TestCase):
         self.orq.resolver_chamado(ch, analista, "Cache do ERP limpo.")
         ch.refresh_from_db()
         self.assertEqual(ch.status, Chamado.Status.RESOLVIDO)
-        self.assertFalse(self.conversa().ativa)
         self.assertTrue(Mensagem.objects.filter(autor="sistema", texto__contains="Cache do ERP").exists())
+        # Junto com a solução vai a pesquisa de satisfação.
+        self.assertEqual(self.conversa().etapa, engine.PESQUISA)
+        self.assertTrue(Mensagem.objects.filter(autor="bot", texto__contains="Muito insatisfeito").exists())
+
+        self.falar("1", "pular")
+        self.assertFalse(self.conversa().ativa)
+        self.assertEqual(self.conversa().resultado, Conversa.Resultado.ESCALADA)
+        self.assertEqual(ch.pesquisas.get().resposta, PesquisaSatisfacao.Resposta.MUITO_SATISFEITO)
 
         # Novo atendimento reaproveita a identificação.
         respostas = self.falar("oi de novo")
         self.assertIn("Olá, Maria", respostas[0])
         self.assertEqual(Conversa.objects.filter(identificador="u1").count(), 2)
+
+    # --- pesquisa de satisfação --------------------------------------------
+    def _resolvido(self):
+        analista = User.objects.create_user("ana", password="x")
+        self.falar(*IDENT, "0", "Preciso de ajuda com o ERP")
+        ch = Chamado.objects.get()
+        self.orq.resolver_chamado(ch, analista, "ERP reinstalado.")
+        return ch
+
+    def test_pesquisa_insatisfeito_exige_observacao(self):
+        ch = self._resolvido()
+        respostas = self.falar("4")  # muito insatisfeito
+        self.assertIn("obrigatório", respostas[-1])
+        respostas = self.falar("pular")
+        self.assertIn("obrigatória", respostas[-1])
+        self.assertFalse(PesquisaSatisfacao.objects.exists())
+        self.falar("Demorou dois dias e ninguém me avisou")
+        p = ch.pesquisas.get()
+        self.assertEqual(p.resposta, PesquisaSatisfacao.Resposta.MUITO_INSATISFEITO)
+        self.assertEqual(p.observacao, "Demorou dois dias e ninguém me avisou")
+        self.assertTrue(ch.eventos.filter(tipo="pesquisa").exists())
+        self.assertFalse(self.conversa().ativa)
+
+    def test_pesquisa_satisfeito_com_observacao_opcional(self):
+        ch = self._resolvido()
+        self.falar("Satisfeito", "Atendimento rápido, obrigado!")
+        p = ch.pesquisas.get()
+        self.assertEqual((p.resposta, p.observacao), ("satisfeito", "Atendimento rápido, obrigado!"))
+
+    def test_pesquisa_resposta_invalida_pergunta_de_novo(self):
+        self._resolvido()
+        respostas = self.falar("talvez")
+        self.assertIn("número", respostas[0])
+        self.assertEqual(self.conversa().etapa, engine.PESQUISA)
+
+    def test_pesquisa_espera_mais_que_o_timeout_normal(self):
+        self._resolvido()
+        Conversa.objects.update(ultima_interacao=timezone.now() - timedelta(hours=5))
+        self.falar("2", "pular")  # 5h depois ainda vale (limite padrão: 72h)
+        self.assertEqual(PesquisaSatisfacao.objects.count(), 1)
+
+    def test_pesquisa_expirada_nao_muda_resultado(self):
+        self._resolvido()
+        Conversa.objects.update(ultima_interacao=timezone.now() - timedelta(days=4))
+        self.falar("oi")
+        antiga = Conversa.objects.filter(identificador="u1").order_by("criada_em").first()
+        self.assertEqual(antiga.resultado, Conversa.Resultado.ESCALADA)
+        self.assertFalse(PesquisaSatisfacao.objects.exists())
+
+    def test_registrar_pesquisa_valida_observacao(self):
+        ch = self._resolvido()
+        with self.assertRaises(ValueError):
+            TicketService().registrar_pesquisa(ch, "insatisfeito", "  ")
+        with self.assertRaises(ValueError):
+            TicketService().registrar_pesquisa(ch, "mais_ou_menos")
+
+    # --- SLA ----------------------------------------------------------------
+    def test_chamado_recebe_sla_da_categoria(self):
+        self.falar(*IDENT, "1", "1", "2", "Continua dando senha inválida")  # Acesso e login
+        ch = Chamado.objects.get()
+        self.assertEqual(ch.sla_horas, 8)
+        self.assertIsNotNone(ch.prazo_sla)
+        self.assertIn("SLA: 8h", ch.eventos.get(tipo="aberto").descricao)
+
+    def test_chamado_sem_categoria_usa_sla_de_outros(self):
+        self.falar(*IDENT, "0", "Preciso de ajuda com o ERP")
+        self.assertEqual(Chamado.objects.get().sla_horas, 72)
 
     # --- segurança --------------------------------------------------------
     def test_senha_nao_e_gravada(self):

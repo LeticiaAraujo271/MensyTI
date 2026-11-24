@@ -89,3 +89,29 @@ small { color: var(--suave); }
 .msg.colaborador { align-self: flex-end; border-color: var(--primaria); }
 .msg.analista { border-color: var(--sucesso); } .msg.sistema { align-self: center; border-style: dashed; }
 .eventos { padding-left: 18px; margin: 0; } .eventos li { margin-bottom: 6px; }
+/* SLA: verde (até 50%), amarelo (50% ou mais), vermelho (vencido) */
+:root { --sla-verde: #067647; --sla-verde-fundo: #DCFAE6; --sla-amarelo: #8A5A00; --sla-amarelo-fundo: #FEF0C7;
+        --sla-vermelho: #B42318; --sla-vermelho-fundo: #FEE4E2; }
+@media (prefers-color-scheme: dark) {
+  :root { --sla-verde: #75E0A7; --sla-verde-fundo: #053321; --sla-amarelo: #FEC84B; --sla-amarelo-fundo: #4E3500;
+          --sla-vermelho: #FDA29B; --sla-vermelho-fundo: #55160C; }
+}
+.sla { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600;
+       white-space: nowrap; text-decoration: none; border: 1px solid currentColor; }
+.sla.verde { color: var(--sla-verde); background: var(--sla-verde-fundo); }
+.sla.amarelo { color: var(--sla-amarelo); background: var(--sla-amarelo-fundo); }
+.sla.vermelho { color: var(--sla-vermelho); background: var(--sla-vermelho-fundo); }
+.sla-cartao { margin: 12px 0; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--borda); border-left-width: 5px; }
+.sla-cartao.verde { border-left-color: var(--sla-verde); }
+.sla-cartao.amarelo { border-left-color: var(--sla-amarelo); }
+.sla-cartao.vermelho { border-left-color: var(--sla-vermelho); }
+.sla-linha { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; }
+.sla-barra { height: 8px; margin: 6px 0; border-radius: 999px; background: var(--fundo); overflow: hidden; }
+.sla-barra span { display: block; height: 100%; border-radius: 999px; }
+.sla-cartao.verde .sla-barra span { background: var(--sla-verde); }
+.sla-cartao.amarelo .sla-barra span { background: var(--sla-amarelo); }
+.sla-cartao.vermelho .sla-barra span { background: var(--sla-vermelho); }
+.pesquisa { padding: 8px 10px; margin-bottom: 8px; border-radius: 8px; border: 1px solid var(--borda); }
+.pesquisa.negativa { border-color: var(--sla-vermelho); }
+.pesquisa p { margin: 4px 0 0; }
+.filtros select { width: auto; }

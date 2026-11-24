@@ -11,6 +11,7 @@ Etapas (BPMN):
   identificacao -> menu/categoria/sugestoes (triagem) -> orientacao (resolveu?)
   -> avaliacao -> encerrado            (resolvido no autoatendimento)
   -> descrever -> humano               (chamado aberto; a TI continua pelo painel)
+  -> pesquisa -> pesquisa_obs -> encerrado   (TI resolveu o chamado: pesquisa de satisfação)
 """
 from __future__ import annotations
 
@@ -31,6 +32,8 @@ RESOLVEU = "resolveu"
 DESCREVER = "descrever"
 AVALIACAO = "avaliacao"
 HUMANO = "humano"          # chamado aberto: mensagens vão para a TI, o bot não responde
+PESQUISA = "pesquisa"      # chamado resolvido: "como você avalia o atendimento?"
+PESQUISA_OBS = "pesquisa_obs"  # observação (obrigatória se insatisfeito)
 ENCERRADO = "encerrado"
 
 # --------------------------------------------------------------------------
@@ -40,6 +43,7 @@ ACAO_IDENTIFICADO = "identificado"
 ACAO_REGISTRAR_ORIENTACAO = "registrar_orientacao"
 ACAO_ABRIR_CHAMADO = "abrir_chamado"
 ACAO_REGISTRAR_AVALIACAO = "registrar_avaliacao"
+ACAO_REGISTRAR_PESQUISA = "registrar_pesquisa"
 ACAO_ENCERRAR = "encerrar"
 
 # O orquestrador troca este marcador pelo protocolo real do chamado.
@@ -55,7 +59,16 @@ CMD_ANALISTA = {"atendente", "analista", "humano", "pessoa", "falar com analista
 
 # Chaves temporárias de cada atendimento (as de identificação ficam).
 _TEMPORARIOS = ("campo", "categoria", "orientacao", "sugestoes", "tentativas",
-                "motivo", "relato", "descricao")
+                "motivo", "relato", "descricao", "pesquisa", "pesquisa_resposta")
+
+# Pesquisa de satisfação do chamado: (valor gravado, rótulo, emoji, exige observação)
+OPCOES_PESQUISA = (
+    ("muito_satisfeito", "Muito satisfeito", "🤩", False),
+    ("satisfeito", "Satisfeito", "🙂", False),
+    ("insatisfeito", "Insatisfeito", "🙁", True),
+    ("muito_insatisfeito", "Muito insatisfeito", "😞", True),
+)
+CMD_PULAR = {"pular", "nao", "n", "sem observacao", "nada"}
 
 
 @dataclass
@@ -284,6 +297,12 @@ TEXTO_AVALIACAO = (
 )
 
 
+def texto_pesquisa(protocolo: str) -> str:
+    opcoes = "\n".join(f"*{i}* - {emoji} {rotulo}" for i, (_, rotulo, emoji, _) in enumerate(OPCOES_PESQUISA, 1))
+    return (f"📋 *Pesquisa de satisfação* do chamado *{protocolo}*\n"
+            f"Como você avalia o atendimento da TI?\n\n{opcoes}")
+
+
 # --------------------------------------------------------------------------
 # Motor
 # --------------------------------------------------------------------------
@@ -300,7 +319,7 @@ def processar(estado: Estado, texto: str, ctx: Contexto) -> Resultado:
             return _encerrar(estado, "Atendimento encerrado. Quando precisar, é só chamar! 👋", "cancelada")
         if cmd in CMD_MENU:
             return _ir_menu(estado, ctx)
-        if cmd in CMD_ANALISTA and estado.etapa != DESCREVER:
+        if cmd in CMD_ANALISTA and estado.etapa not in (DESCREVER, PESQUISA_OBS):
             return _pedir_descricao(estado, ctx, motivo="colaborador pediu atendimento da TI")
 
     etapa = estado.etapa
@@ -320,6 +339,10 @@ def processar(estado: Estado, texto: str, ctx: Contexto) -> Resultado:
         return _receber_descricao(estado, texto, ctx)
     if etapa == AVALIACAO:
         return _avaliacao(estado, texto)
+    if etapa == PESQUISA:
+        return _pesquisa(estado, texto)
+    if etapa == PESQUISA_OBS:
+        return _pesquisa_obs(estado, texto)
 
     # Etapa desconhecida (ex.: mudança de versão): recomeça com segurança.
     estado.etapa = INICIO
@@ -511,6 +534,60 @@ def _avaliacao(estado: Estado, texto: str) -> Resultado:
     if estado.dados["tentativas"] >= 2:
         return _encerrar(estado, "Tudo bem! Atendimento encerrado. Quando precisar, é só chamar. 👋", "resolvida")
     return Resultado(estado, ["Por favor, responda com um número de *1* a *5*."])
+
+
+# --- pesquisa de satisfação do chamado --------------------------------------
+def _opcao_pesquisa(texto: str) -> int | None:
+    n = _numero(texto)
+    if n is not None:
+        return n - 1 if 1 <= n <= len(OPCOES_PESQUISA) else None
+    c = normalizar(texto)
+    for i, (_, rotulo, _, _) in enumerate(OPCOES_PESQUISA):
+        if c == normalizar(rotulo):
+            return i
+    return None
+
+
+def _pesquisa(estado: Estado, texto: str) -> Resultado:
+    if normalizar(texto) in CMD_PULAR:
+        return _encerrar(estado, "Tudo bem! Atendimento encerrado. Quando precisar, é só chamar. 👋", "escalada")
+    i = _opcao_pesquisa(texto)
+    if i is None:
+        estado.dados["tentativas"] = estado.dados.get("tentativas", 0) + 1
+        if estado.dados["tentativas"] >= 3:
+            return _encerrar(estado, "Tudo bem, vou encerrar a pesquisa. Se precisar de algo, é só escrever "
+                                     "de novo para abrir um novo atendimento. 👋", "escalada")
+        protocolo = (estado.dados.get("pesquisa") or {}).get("protocolo", "")
+        return Resultado(estado, ["Responda com o *número* de 1 a 4 (ou *pular* para não responder).",
+                                  texto_pesquisa(protocolo)])
+    valor, rotulo, _, exige = OPCOES_PESQUISA[i]
+    estado.etapa = PESQUISA_OBS
+    estado.dados["pesquisa_resposta"] = valor
+    estado.dados["tentativas"] = 0
+    if exige:
+        return Resultado(estado, [f"Sentimos muito. 😕 Você marcou *{rotulo}*.\n"
+                                  "Conte o que não foi bom para a TI melhorar o atendimento "
+                                  "(*obrigatório*):"])
+    return Resultado(estado, [f"Obrigado! Você marcou *{rotulo}*. 😊\n"
+                              "Quer deixar uma observação? Escreva aqui ou responda *pular*."])
+
+
+def _pesquisa_obs(estado: Estado, texto: str) -> Resultado:
+    valor = estado.dados.get("pesquisa_resposta")
+    exige = next((o[3] for o in OPCOES_PESQUISA if o[0] == valor), False)
+    observacao = _limpar(texto)
+    if not exige and normalizar(observacao) in CMD_PULAR:
+        observacao = ""
+    elif exige and (len(observacao) < 3 or normalizar(observacao) in CMD_PULAR):
+        return Resultado(estado, ["A observação é *obrigatória* quando você está insatisfeito. "
+                                  "Conte em poucas palavras o que aconteceu:"])
+    pesquisa = estado.dados.get("pesquisa") or {}
+    acao = Acao(ACAO_REGISTRAR_PESQUISA, {"chamado": pesquisa.get("chamado"), "resposta": valor,
+                                          "observacao": observacao[:1000]})
+    r = _encerrar(estado, "Obrigado pela sua avaliação! Ela ajuda a TI a melhorar. Atendimento encerrado. 👋",
+                  "escalada")
+    r.acoes.insert(0, acao)
+    return r
 
 
 # --- chamado --------------------------------------------------------------

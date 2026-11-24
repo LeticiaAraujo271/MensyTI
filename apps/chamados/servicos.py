@@ -13,7 +13,8 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.module_loading import import_string
 
-from .models import Chamado, EventoChamado
+from .models import Chamado, EventoChamado, PesquisaSatisfacao
+from .sla import sla_da_categoria, somar_horas_uteis
 
 log = logging.getLogger(__name__)
 
@@ -66,10 +67,12 @@ class TicketService:
         )
         chamado.protocolo = f"TI-{chamado.criado_em.year}-{chamado.pk:06d}"
         chamado.status = S.EM_FILA
-        chamado.save(update_fields=["protocolo", "status"])
+        self._definir_sla(chamado)
+        chamado.save(update_fields=["protocolo", "status", "sla_horas", "prazo_sla"])
         self._evento(chamado, EventoChamado.Tipo.ABERTO,
                      f"Aberto pelo assistente ({conversa.get_canal_display()}). Motivo: {motivo}"
-                     + (" | Fora do horário de atendimento." if fora_do_horario else ""))
+                     + (" | Fora do horário de atendimento." if fora_do_horario else "")
+                     + f" | SLA: {chamado.sla_horas}h úteis.")
         self._enviar_ao_sistema_externo(chamado)
         return chamado
 
@@ -112,6 +115,31 @@ class TicketService:
         self._evento(chamado, EventoChamado.Tipo.SOLUCAO, solucao, usuario)
         return chamado
 
+    def reclassificar(self, chamado: Chamado, categoria: str, usuario=None) -> Chamado:
+        """Troca a categoria; o SLA passa a ser o da nova categoria (contado desde a abertura)."""
+        categoria = (categoria or "").strip()[:80]
+        if categoria == chamado.categoria:
+            return chamado
+        anterior, sla_anterior = chamado.categoria or "sem categoria", chamado.sla_horas
+        chamado.categoria = categoria
+        self._definir_sla(chamado)
+        chamado.save(update_fields=["categoria", "sla_horas", "prazo_sla", "atualizado_em"])
+        self._evento(chamado, EventoChamado.Tipo.RECLASSIFICADO,
+                     f"{anterior} → {categoria or 'sem categoria'}. SLA: {sla_anterior}h → {chamado.sla_horas}h úteis.",
+                     usuario)
+        return chamado
+
+    def registrar_pesquisa(self, chamado: Chamado, resposta: str, observacao: str = "") -> PesquisaSatisfacao:
+        observacao = (observacao or "").strip()
+        if resposta not in PesquisaSatisfacao.Resposta.values:
+            raise ValueError("Resposta da pesquisa inválida.")
+        if resposta in PesquisaSatisfacao.EXIGEM_OBSERVACAO and not observacao:
+            raise ValueError("A observação é obrigatória para respostas de insatisfação.")
+        pesquisa = PesquisaSatisfacao.objects.create(chamado=chamado, resposta=resposta, observacao=observacao)
+        self._evento(chamado, EventoChamado.Tipo.PESQUISA,
+                     pesquisa.get_resposta_display() + (f": {observacao}" if observacao else ""))
+        return pesquisa
+
     def registrar_resposta(self, chamado: Chamado, usuario, texto: str) -> None:
         if chamado.status in (S.ABERTO, S.EM_FILA):
             chamado.status = S.EM_ATENDIMENTO
@@ -127,6 +155,10 @@ class TicketService:
             Chamado.objects.filter(pk=chamado.pk).update(atualizado_em=timezone.now())
 
     # --- auxiliares -------------------------------------------------------
+    def _definir_sla(self, chamado: Chamado) -> None:
+        chamado.sla_horas = sla_da_categoria(chamado.categoria)
+        chamado.prazo_sla = somar_horas_uteis(chamado.criado_em, chamado.sla_horas)
+
     def _evento(self, chamado, tipo, descricao, autor=None):
         return EventoChamado.objects.create(chamado=chamado, tipo=tipo, descricao=descricao, autor=autor)
 

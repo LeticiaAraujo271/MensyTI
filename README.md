@@ -38,10 +38,12 @@ incidente crítico/segurança ──▶ avisos seguros ──▶ chamado com pri
 - `menu`, `sair` e `analista` funcionam em qualquer etapa; `0` abre chamado.
 - 3 respostas inválidas seguidas: o assistente oferece abrir chamado.
 - Com o chamado aberto, as mensagens do colaborador vão para o chamado; a TI responde pelo painel
-  e a resposta aparece no chat. Ao resolver, o colaborador recebe a solução.
+  e a resposta aparece no chat. Ao resolver, o colaborador recebe a solução e a
+  **pesquisa de satisfação** (veja [SLA e pesquisa de satisfação](#sla-e-pesquisa-de-satisfação)).
 - O assistente nunca pede senha nem código MFA. Senhas, códigos de verificação e CPF digitados são
   removidos antes de gravar.
-- 30 minutos sem resposta: o atendimento recomeça (a identificação é mantida).
+- 30 minutos sem resposta: o atendimento recomeça (a identificação é mantida). A pesquisa de
+  satisfação espera mais: 72 horas (`BOT_PESQUISA_HORAS`).
 
 ## Arquitetura
 
@@ -313,6 +315,75 @@ entre colaboradores, permissões do painel e remoção de senhas.
 
 Para conversar pelo terminal: `python manage.py simular_conversa --novo`
 
+## SLA e pesquisa de satisfação
+
+### SLA dos chamados
+
+Todo chamado recebe, na abertura, o SLA da sua categoria, em **horas úteis**: só conta o horário de
+atendimento (`BOT_HORARIO_*`, padrão segunda a sexta, das 8h às 18h). Um chamado aberto às 20h
+começa a contar às 8h do próximo dia útil.
+
+| Opção | Categoria | SLA (horas úteis) | Por quê |
+|---|---|---|---|
+| 1 | 🔐 Acesso e login | 8h | Sem login o colaborador não trabalha |
+| 8 | 🚨 Segurança e incidentes | 8h | Risco para a empresa, precisa de ação rápida |
+| 3 | 📶 Internet, rede e VPN | 8h | Normalmente impede todo o trabalho |
+| 4 | 📧 E-mail e Microsoft 365 | 16h | Afeta a rotina, mas costuma haver alternativa (webmail, celular) |
+| 6 | 🧩 Sistemas internos | 16h | Pode depender de terceiros ou do fornecedor do sistema |
+| 2 | 💻 Computador lento ou travando | 24h | Atrapalha, mas o trabalho geralmente continua |
+| 5 | 🖨️ Impressora | 24h | Quase sempre há outra impressora disponível |
+| 7 | 🔑 Solicitação de acesso | 40h | Depende da aprovação do gestor: é uma requisição, não um incidente |
+| 9 | ✍️ Outros assuntos | 72h | Precisa de triagem; a TI pode reclassificar e o SLA muda |
+| 0 | 🙋 Falar com a equipe de TI | da categoria escolhida | Sem categoria, vale o de "Outros" (72h, `SLA_PADRAO_HORAS`) |
+
+**Cores no painel** (fila, detalhe do chamado e Admin):
+
+| Cor | Quando |
+|---|---|
+| 🟢 Verde, "No prazo" | menos da metade do SLA consumida |
+| 🟡 Amarelo, "Atenção" | metade do SLA (50%) ou mais já consumida |
+| 🔴 Vermelho, "Vencido" | o prazo do SLA passou |
+
+- A fila mostra a cor e o percentual de cada chamado, tem o filtro **SLA** e um aviso com quantos
+  chamados abertos estão com o SLA vencido.
+- No detalhe do chamado ficam o prazo, o percentual consumido, as horas que faltam e uma barra de
+  progresso.
+- **Reclassificar:** no detalhe do chamado (ou no Admin), troque a categoria. O SLA passa a ser o
+  da nova categoria, contado desde a abertura, e a troca fica no histórico.
+- Quando o chamado é resolvido, o SLA congela: **Cumprido** (resolvido no prazo) ou **Vencido**.
+- Para mudar os prazos: Admin → **Categorias** → coluna "SLA (horas úteis)". Vale para os chamados
+  abertos depois da mudança, ou para os que forem reclassificados.
+- Ainda não descontam: feriados e o tempo em "Aguardando colaborador".
+
+### Pesquisa de satisfação
+
+Quando a TI resolve o chamado no painel, o colaborador recebe no chat (portal ou WhatsApp) a solução
+e, em seguida, a pesquisa:
+
+```
+📋 Pesquisa de satisfação do chamado TI-2026-000123
+Como você avalia o atendimento da TI?
+
+1 - 🤩 Muito satisfeito
+2 - 🙂 Satisfeito
+3 - 🙁 Insatisfeito
+4 - 😞 Muito insatisfeito
+```
+
+- Depois da resposta, o assistente pede uma **observação**:
+  - **Insatisfeito** e **Muito insatisfeito**: a observação é **obrigatória**. O assistente não
+    aceita resposta vazia nem "pular" e pede de novo.
+  - **Satisfeito** e **Muito satisfeito**: a observação é opcional (responda *pular*).
+- O colaborador também pode responder *pular* na primeira pergunta para não participar.
+- A pesquisa espera a resposta por 72 horas (`BOT_PESQUISA_HORAS`). Depois disso, a próxima
+  mensagem abre um novo atendimento.
+- Onde ver as respostas: no detalhe do chamado no painel (com destaque nas negativas), na coluna
+  "Responsável" da fila, no histórico do chamado e no Admin, em **Pesquisas de satisfação** (com
+  filtro por resposta e data).
+
+A avaliação de 1 a 5 continua existindo só para os casos **resolvidos no autoatendimento**, sem
+chamado.
+
 ## Base de conhecimento
 
 Fica no Admin, em **Orientações**. Um passo por linha. Alguns campos mudam o comportamento:
@@ -409,7 +480,7 @@ túnel da internet até o seu `runserver`.
 | Fase | Escopo | Situação |
 |---|---|---|
 | 1. MVP portal | Chat web, identificação, base, texto livre, chamado com protocolo/prioridade, painel básico, perfis, testes | ✅ feito |
-| 2. Painel TI | Atribuição a outro analista, SLA, notificações (e-mail/Teams), respostas prontas | a fazer |
+| 2. Painel TI | SLA por categoria (verde/amarelo/vermelho) e pesquisa de satisfação ✅; atribuição a outro analista, notificações (e-mail/Teams), respostas prontas | em andamento |
 | 3. Base de conhecimento | Versões e aprovação de artigos, horários e feriados editáveis no Admin, dashboard de métricas | a fazer |
 | 4. WhatsApp | Fila de envio com retentativas e backoff, indicador de saúde, link do portal quando o canal cair | a fazer |
 | 5. Segurança e LGPD | Retenção configurável, exportação e remoção de dados, auditoria de acessos, acompanhamento do chamado por protocolo com validação por e-mail, limites contra abuso por IP | a fazer |

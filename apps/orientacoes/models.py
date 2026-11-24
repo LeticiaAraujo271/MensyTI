@@ -5,6 +5,11 @@ class Categoria(models.Model):
     nome = models.CharField(max_length=80)
     emoji = models.CharField(max_length=8, blank=True)
     ordem = models.PositiveSmallIntegerField(default=0, help_text="Posição no menu (menor aparece primeiro).")
+    sla_horas = models.PositiveSmallIntegerField(
+        "SLA (horas úteis)", default=72,
+        help_text="Prazo para resolver os chamados desta categoria, em horas úteis (horário de atendimento). "
+                  "Ex.: 8 = um dia útil.",
+    )
     ativa = models.BooleanField(default=True)
 
     class Meta:

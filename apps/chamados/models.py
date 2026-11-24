@@ -48,6 +48,11 @@ class Chamado(models.Model):
     protocolo_externo = models.CharField(max_length=60, blank=True,
                                          help_text="Número no sistema de chamados externo (quando integrado).")
 
+    sla_horas = models.PositiveSmallIntegerField(
+        "SLA (horas úteis)", default=72,
+        help_text="Vem da categoria na abertura; muda se a TI reclassificar o chamado.")
+    prazo_sla = models.DateTimeField("prazo do SLA", null=True, blank=True)
+
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
     resolvido_em = models.DateTimeField(null=True, blank=True)
@@ -66,6 +71,15 @@ class Chamado(models.Model):
     def aberto(self) -> bool:
         return self.status in self.ABERTOS
 
+    @property
+    def sla(self):
+        """Situação do SLA agora: cor (verde/amarelo/vermelho), percentual, prazo..."""
+        from .sla import situacao
+
+        if not hasattr(self, "_sla"):
+            self._sla = situacao(self)
+        return self._sla
+
 
 class EventoChamado(models.Model):
     """Trilha de auditoria do chamado: quem fez o quê e quando."""
@@ -78,6 +92,8 @@ class EventoChamado(models.Model):
         NOTA = "nota", "Nota"
         SOLUCAO = "solucao", "Solução registrada"
         REABERTO = "reaberto", "Reaberto"
+        RECLASSIFICADO = "reclassif", "Reclassificado"
+        PESQUISA = "pesquisa", "Pesquisa de satisfação"
         INTEGRACAO = "integracao", "Integração externa"
 
     chamado = models.ForeignKey(Chamado, on_delete=models.CASCADE, related_name="eventos")
@@ -93,3 +109,39 @@ class EventoChamado(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()}: {self.descricao[:60]}"
+
+
+class PesquisaSatisfacao(models.Model):
+    """Resposta do colaborador à pesquisa enviada quando o chamado é resolvido."""
+
+    class Resposta(models.TextChoices):
+        MUITO_SATISFEITO = "muito_satisfeito", "Muito satisfeito"
+        SATISFEITO = "satisfeito", "Satisfeito"
+        INSATISFEITO = "insatisfeito", "Insatisfeito"
+        MUITO_INSATISFEITO = "muito_insatisfeito", "Muito insatisfeito"
+
+    # Nessas respostas a observação é obrigatória (para a TI entender o que melhorar).
+    EXIGEM_OBSERVACAO = (Resposta.INSATISFEITO, Resposta.MUITO_INSATISFEITO)
+
+    chamado = models.ForeignKey(Chamado, on_delete=models.CASCADE, related_name="pesquisas")
+    resposta = models.CharField(max_length=20, choices=Resposta.choices)
+    observacao = models.TextField("observação", blank=True)
+    respondida_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-respondida_em"]
+        verbose_name = "pesquisa de satisfação"
+        verbose_name_plural = "pesquisas de satisfação"
+
+    def __str__(self):
+        return f"{self.chamado.protocolo}: {self.get_resposta_display()}"
+
+    @property
+    def negativa(self) -> bool:
+        return self.resposta in self.EXIGEM_OBSERVACAO
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.resposta in self.EXIGEM_OBSERVACAO and not (self.observacao or "").strip():
+            raise ValidationError({"observacao": "A observação é obrigatória para respostas de insatisfação."})

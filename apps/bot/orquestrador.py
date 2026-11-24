@@ -8,7 +8,8 @@ Fluxo de uma mensagem do colaborador (qualquer canal):
      Senão: roda o motor, executa as ações (abrir chamado, avaliação, métricas) e grava as respostas.
   4. Fora da transação: pede ao canal para entregar as respostas (falha de entrega não perde nada).
 
-A equipe de TI usa responder_como_analista() e resolver_chamado() pelo painel.
+A equipe de TI usa responder_como_analista() e resolver_chamado() pelo painel. Ao resolver,
+o colaborador recebe a solução e a pesquisa de satisfação (etapas pesquisa/pesquisa_obs do motor).
 """
 from __future__ import annotations
 
@@ -31,6 +32,8 @@ from .models import Avaliacao, Colaborador, Conversa, Mensagem, OrientacaoVista
 log = logging.getLogger(__name__)
 
 CAMPOS_IDENTIFICACAO = ("nome", "setor", "email", "matricula")
+
+ETAPAS_PESQUISA = (engine.PESQUISA, engine.PESQUISA_OBS)
 
 TEXTO_SO_TEXTO = (
     "Por enquanto eu só entendo mensagens de *texto* 🙂 "
@@ -131,10 +134,17 @@ class ConversationOrchestrator:
                      "Se o problema voltar, é só escrever aqui para iniciar um novo atendimento.")
             Mensagem.objects.create(conversa=conversa, autor=Mensagem.Autor.SISTEMA, texto=texto,
                                     etapa=conversa.etapa)
+            textos = [texto]
             if conversa.ativa and conversa.etapa == engine.HUMANO:
-                conversa.etapa = engine.ENCERRADO
-                self._fechar(conversa, conversa.resultado)
-        self._entregar(conversa, [texto])
+                # Pesquisa de satisfação: a conversa continua até o colaborador responder.
+                conversa.etapa = engine.PESQUISA
+                conversa.dados = {**(conversa.dados or {}), "tentativas": 0,
+                                  "pesquisa": {"chamado": chamado.pk, "protocolo": chamado.protocolo}}
+                conversa.save()
+                pergunta = engine.texto_pesquisa(chamado.protocolo)
+                self._gravar_respostas(conversa, [pergunta])
+                textos.append(pergunta)
+        self._entregar(conversa, textos)
         return chamado
 
     # ------------------------------------------------------------------
@@ -145,8 +155,11 @@ class ConversationOrchestrator:
         qs = Conversa.objects.select_for_update().filter(canal=canal, identificador=identificador, ativa=True)
         conversa = qs.first()
         if conversa and self._expirou(conversa):
+            # Pesquisa sem resposta não muda o resultado do atendimento (continua "escalada").
+            resultado = (conversa.resultado if conversa.etapa in ETAPAS_PESQUISA
+                         else Conversa.Resultado.EXPIRADA)
             conversa.etapa = engine.ENCERRADO
-            self._fechar(conversa, Conversa.Resultado.EXPIRADA)
+            self._fechar(conversa, resultado)
             conversa = None
         if conversa:
             return conversa
@@ -164,7 +177,10 @@ class ConversationOrchestrator:
     def _expirou(self, conversa: Conversa) -> bool:
         if conversa.etapa in (engine.INICIO, engine.HUMANO):
             return False
-        limite = timedelta(minutes=settings.BOT["TIMEOUT_MINUTOS"])
+        if conversa.etapa in ETAPAS_PESQUISA:
+            limite = timedelta(hours=settings.BOT.get("PESQUISA_HORAS", 72))
+        else:
+            limite = timedelta(minutes=settings.BOT["TIMEOUT_MINUTOS"])
         return timezone.now() - conversa.ultima_interacao > limite
 
     def _fechar(self, conversa: Conversa, resultado: str) -> None:
@@ -217,6 +233,10 @@ class ConversationOrchestrator:
             respostas = [r.replace(engine.PROTOCOLO, chamado.protocolo) for r in respostas]
         elif acao.tipo == engine.ACAO_REGISTRAR_AVALIACAO:
             Avaliacao.objects.create(conversa=conversa, nota=acao.params["nota"])
+        elif acao.tipo == engine.ACAO_REGISTRAR_PESQUISA:
+            chamado = Chamado.objects.filter(pk=acao.params.get("chamado")).first()
+            if chamado:
+                self.tickets.registrar_pesquisa(chamado, acao.params["resposta"], acao.params["observacao"])
         elif acao.tipo == engine.ACAO_ENCERRAR:
             self._fechar(conversa, acao.params.get("resultado") or Conversa.Resultado.CANCELADA)
         return respostas

@@ -15,7 +15,9 @@ from django.views.decorators.http import require_GET, require_POST
 
 from apps.bot.orquestrador import ConversationOrchestrator
 from apps.canais import WebChannel
+from apps.chamados import sla
 from apps.chamados.models import Chamado
+from apps.orientacoes.models import Categoria
 from apps.chamados.servicos import TicketService, TransicaoInvalida
 
 PERMISSAO = "chamados.atender_chamado"
@@ -55,8 +57,19 @@ def fila(request):
         qs = qs.filter(Q(protocolo__icontains=busca) | Q(nome_colaborador__icontains=busca)
                        | Q(contato__icontains=busca) | Q(descricao__icontains=busca))
     contagem = dict(Chamado.objects.values_list("status").annotate(n=Count("id")).values_list("status", "n"))
+    chamados = list(qs.prefetch_related("pesquisas").order_by("prioridade", "criado_em")[:300])
+    cor_sla = request.GET.get("sla", "")
+    if cor_sla in (sla.VERDE, sla.AMARELO, sla.VERMELHO):
+        chamados = [c for c in chamados if c.sla.cor == cor_sla]
+    em_aberto = Chamado.objects.filter(status__in=Chamado.ABERTOS).only(
+        "status", "sla_horas", "prazo_sla", "criado_em", "resolvido_em")
+    sla_vencidos = sum(1 for c in em_aberto if c.sla.cor == sla.VERMELHO)
     return render(request, "painel/fila.html", {
-        "chamados": qs.order_by("prioridade", "criado_em")[:300],
+        "chamados": chamados,
+        "sla": cor_sla,
+        "sla_vencidos": sla_vencidos,
+        "opcoes_sla": [(sla.VERDE, "🟢 No prazo"), (sla.AMARELO, "🟡 Metade do SLA consumida"),
+                       (sla.VERMELHO, "🔴 SLA vencido")],
         "status": status,
         "prioridade": request.GET.get("prioridade", ""),
         "meus": bool(request.GET.get("meus")),
@@ -83,6 +96,8 @@ def detalhe(request, protocolo):
         "ultimo_id": mensagens.last().id if conversa and mensagens.exists() else 0,
         "eventos": chamado.eventos.select_related("autor"),
         "pode_responder": chamado.aberto and conversa is not None,
+        "pesquisas": chamado.pesquisas.all(),
+        "categorias": Categoria.objects.filter(ativa=True).values_list("nome", "sla_horas"),
         "S": S,
     })
 
@@ -111,6 +126,10 @@ def acao(request, protocolo):
         elif acao == "resolver":
             _orquestrador().resolver_chamado(chamado, request.user, request.POST.get("solucao", ""))
             messages.success(request, "Chamado resolvido e colaborador avisado.")
+        elif acao == "reclassificar":
+            tickets.reclassificar(chamado, request.POST.get("categoria", ""), request.user)
+            messages.success(request, f"Categoria: {chamado.categoria or 'sem categoria'} · "
+                                      f"SLA {chamado.sla_horas}h úteis.")
         elif acao == "fechar":
             tickets.mudar_status(chamado, S.FECHADO, request.user)
             messages.success(request, "Chamado fechado.")

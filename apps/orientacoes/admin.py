@@ -11,8 +11,8 @@ class OrientacaoInline(admin.StackedInline):
 
 @admin.register(Categoria)
 class CategoriaAdmin(admin.ModelAdmin):
-    list_display = ("nome", "emoji", "ordem", "ativa")
-    list_editable = ("ordem", "ativa")
+    list_display = ("nome", "emoji", "ordem", "sla_horas", "ativa")
+    list_editable = ("ordem", "sla_horas", "ativa")
     inlines = [OrientacaoInline]
 
 

@@ -18,7 +18,7 @@ class Command(BaseCommand):
         criadas = 0
         for i, cat in enumerate(CATALOGO_INICIAL, start=1):
             categoria, _ = Categoria.objects.get_or_create(
-                nome=cat["nome"], defaults={"emoji": cat.get("emoji", ""), "ordem": i}
+                nome=cat["nome"], defaults={"emoji": cat.get("emoji", ""), "ordem": i, "sla_horas": cat.get("sla_horas", 72)}
             )
             for j, ori in enumerate(cat["orientacoes"], start=1):
                 _, nova = Orientacao.objects.get_or_create(

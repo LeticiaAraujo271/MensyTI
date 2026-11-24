@@ -1,0 +1,2 @@
+{# Selo do SLA. Uso: {% include "painel/_sla.html" with s=chamado.sla %} #}
+<span class="sla {{ s.cor }}" title="SLA {{ s.horas }}h úteis · {{ s.percentual }}% consumido · prazo {{ s.prazo|date:'d/m H:i' }}">{% if s.cor == "verde" %}🟢{% elif s.cor == "amarelo" %}🟡{% else %}🔴{% endif %} {{ s.rotulo }}{% if not s.encerrado %} · {{ s.percentual }}%{% endif %}</span>

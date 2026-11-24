@@ -5,6 +5,7 @@
 <div class="titulo-linha">
   <h1>Fila de chamados</h1>
   {% if criticos %}<span class="selo p1">🚨 {{ criticos }} crítico{{ criticos|pluralize }} em aberto</span>{% endif %}
+  {% if sla_vencidos %}<a class="sla vermelho" href="?status=abertos&sla=vermelho">🔴 {{ sla_vencidos }} com SLA vencido</a>{% endif %}
 </div>
 
 <nav class="abas">
@@ -20,6 +21,10 @@
     <option value="">Todas as prioridades</option>
     {% for v, n in opcoes_prioridade %}<option value="{{ v }}" {% if prioridade == v|stringformat:"s" %}selected{% endif %}>{{ n }}</option>{% endfor %}
   </select>
+  <select name="sla">
+    <option value="">Todos os SLAs</option>
+    {% for v, n in opcoes_sla %}<option value="{{ v }}" {% if sla == v %}selected{% endif %}>{{ n }}</option>{% endfor %}
+  </select>
   <label class="check"><input type="checkbox" name="meus" value="1" {% if meus %}checked{% endif %}> Só os meus</label>
   <button type="submit">Filtrar</button>
 </form>
@@ -27,22 +32,23 @@
 <div class="tabela-rolagem">
 <table class="tabela">
   <thead>
-    <tr><th>Protocolo</th><th>Prioridade</th><th>Colaborador</th><th>Assunto</th><th>Status</th><th>Responsável</th><th>Canal</th><th>Aberto em</th></tr>
+    <tr><th>Protocolo</th><th>SLA</th><th>Prioridade</th><th>Colaborador</th><th>Assunto</th><th>Status</th><th>Responsável</th><th>Canal</th><th>Aberto em</th></tr>
   </thead>
   <tbody>
   {% for c in chamados %}
     <tr>
       <td><a href="{% url 'painel:detalhe' c.protocolo %}"><b>{{ c.protocolo }}</b></a></td>
+      <td>{% include "painel/_sla.html" with s=c.sla %}</td>
       <td><span class="selo p{{ c.prioridade }}">{{ c.get_prioridade_display }}</span></td>
       <td>{{ c.nome_colaborador }}<br><small>{{ c.setor }}</small></td>
       <td>{{ c.categoria|default:"—" }}<br><small>{{ c.descricao|truncatechars:70 }}</small></td>
       <td><span class="status {{ c.status }}">{{ c.get_status_display }}</span>{% if c.fora_do_horario %}<br><small>🕒 fora do horário</small>{% endif %}</td>
-      <td>{{ c.responsavel.get_username|default:"—" }}</td>
+      <td>{{ c.responsavel.get_username|default:"—" }}{% with p=c.pesquisas.all.0 %}{% if p %}<br><small title="Pesquisa de satisfação">{% include "painel/_pesquisa_emoji.html" %} {{ p.get_resposta_display }}</small>{% endif %}{% endwith %}</td>
       <td>{{ c.canal|default:"—" }}</td>
       <td>{{ c.criado_em|date:"d/m H:i" }}</td>
     </tr>
   {% empty %}
-    <tr><td colspan="8" class="vazio">Nenhum chamado aqui. 🎉</td></tr>
+    <tr><td colspan="9" class="vazio">Nenhum chamado aqui. 🎉</td></tr>
   {% endfor %}
   </tbody>
 </table>

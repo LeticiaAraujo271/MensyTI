@@ -158,12 +158,17 @@ BOT = {
     "HORARIO_INICIO": env("BOT_HORARIO_INICIO", default="08:00"),
     "HORARIO_FIM": env("BOT_HORARIO_FIM", default="18:00"),
     "TEXTO_HORARIO": env("BOT_TEXTO_HORARIO", default="segunda a sexta, das 8h às 18h"),
+    # Por quanto tempo a pesquisa de satisfação fica esperando a resposta do colaborador
+    "PESQUISA_HORAS": env("BOT_PESQUISA_HORAS", default=72, cast=int),
 }
 
 # --------------------------------------------------------------------------
 # Chamados: sempre ficam na Central de TI. Opcionalmente, também em um sistema externo.
 # --------------------------------------------------------------------------
 CHAMADOS_BACKEND = env("CHAMADOS_BACKEND", default="apps.chamados.backends.BackendLocal")
+# SLA de quem não tem categoria (ex.: "Falar com a equipe de TI" direto do menu) = o de "Outros".
+# O SLA de cada categoria é editado no Admin, em Categorias. Contado em horas úteis (horário acima).
+SLA_PADRAO_HORAS = env("SLA_PADRAO_HORAS", default=72, cast=int)
 
 LOGGING = {
     "version": 1,

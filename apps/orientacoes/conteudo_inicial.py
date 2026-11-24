@@ -12,6 +12,7 @@ ele só mostra o que estiver cadastrado e aprovado aqui.
 CATALOGO_INICIAL = [
     {
         "nome": "Acesso e login",
+        "sla_horas": 8,
         "emoji": "🔐",
         "orientacoes": [
             {
@@ -50,6 +51,7 @@ CATALOGO_INICIAL = [
     },
     {
         "nome": "Computador lento ou travando",
+        "sla_horas": 24,
         "emoji": "💻",
         "orientacoes": [
             {
@@ -88,6 +90,7 @@ CATALOGO_INICIAL = [
     },
     {
         "nome": "Internet, rede e VPN",
+        "sla_horas": 8,
         "emoji": "📡",
         "orientacoes": [
             {
@@ -116,6 +119,7 @@ CATALOGO_INICIAL = [
     },
     {
         "nome": "E-mail e Microsoft 365",
+        "sla_horas": 16,
         "emoji": "📧",
         "orientacoes": [
             {
@@ -164,6 +168,7 @@ CATALOGO_INICIAL = [
     },
     {
         "nome": "Impressora",
+        "sla_horas": 24,
         "emoji": "🖨️",
         "orientacoes": [
             {
@@ -191,6 +196,7 @@ CATALOGO_INICIAL = [
     },
     {
         "nome": "Sistemas internos",
+        "sla_horas": 16,
         "emoji": "🧩",
         "orientacoes": [
             {
@@ -218,6 +224,7 @@ CATALOGO_INICIAL = [
     },
     {
         "nome": "Solicitação de acesso",
+        "sla_horas": 40,
         "emoji": "🔑",
         "orientacoes": [
             {
@@ -246,6 +253,7 @@ CATALOGO_INICIAL = [
     },
     {
         "nome": "Segurança e incidentes",
+        "sla_horas": 8,
         "emoji": "🚨",
         "orientacoes": [
             {
@@ -284,6 +292,7 @@ CATALOGO_INICIAL = [
     {
         # Sem orientações: o colaborador descreve e o chamado é aberto direto.
         "nome": "Outros assuntos",
+        "sla_horas": 72,
         "emoji": "✍️",
         "orientacoes": [],
     },

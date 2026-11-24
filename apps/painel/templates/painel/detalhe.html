@@ -6,6 +6,7 @@
   <h1>{{ chamado.protocolo }}</h1>
   <span class="selo p{{ chamado.prioridade }}">{{ chamado.get_prioridade_display }}</span>
   <span class="status {{ chamado.status }}" id="status-atual">{{ chamado.get_status_display }}</span>
+  {% include "painel/_sla.html" with s=chamado.sla %}
 </div>
 
 <div class="grade">
@@ -23,9 +24,34 @@
       <dt>Responsável</dt><dd>{{ chamado.responsavel.get_username|default:"ninguém ainda" }}</dd>
       {% if chamado.protocolo_externo %}<dt>Sistema externo</dt><dd>{{ chamado.protocolo_externo }}</dd>{% endif %}
     </dl>
+    {% with s=chamado.sla %}
+    <div class="sla-cartao {{ s.cor }}">
+      <div class="sla-linha">
+        <b>SLA: {{ s.horas }}h úteis</b>
+        <span>{% if s.encerrado %}resolvido com {{ s.percentual }}% do prazo{% else %}{{ s.percentual }}% consumido · {{ s.texto_restante }}{% endif %}</span>
+      </div>
+      <div class="sla-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ s.percentual }}"
+           aria-label="SLA consumido"><span style="width: {% if s.percentual > 100 %}100{% else %}{{ s.percentual }}{% endif %}%"></span></div>
+      <small>Prazo: {{ s.prazo|date:"d/m/Y H:i"|default:"—" }} · 🟢 até 50% · 🟡 a partir de 50% · 🔴 vencido. Conta só o horário de atendimento.</small>
+    </div>
+    {% endwith %}
+
     <h3>Descrição</h3>
     <p class="pre">{{ chamado.descricao|default:"—" }}</p>
     {% if chamado.solucao %}<h3>Solução</h3><p class="pre">{{ chamado.solucao }}</p>{% endif %}
+
+    {% if pesquisas %}
+    <h3>Pesquisa de satisfação</h3>
+    {% for p in pesquisas %}
+      <div class="pesquisa {% if p.negativa %}negativa{% endif %}">
+        <b>{% include "painel/_pesquisa_emoji.html" %} {{ p.get_resposta_display }}</b> <small>· {{ p.respondida_em|date:"d/m/Y H:i" }}</small>
+        {% if p.observacao %}<p class="pre">{{ p.observacao }}</p>{% endif %}
+      </div>
+    {% endfor %}
+    {% elif chamado.status == S.RESOLVIDO or chamado.status == S.FECHADO %}
+    <h3>Pesquisa de satisfação</h3>
+    <p><small>Enviada ao colaborador; ainda sem resposta.</small></p>
+    {% endif %}
 
     <h2>Ações</h2>
     <div class="acoes">
@@ -49,6 +75,15 @@
       {% if chamado.status == S.RESOLVIDO %}
       <form method="post" action="{% url 'painel:acao' chamado.protocolo %}">{% csrf_token %}
         <input type="hidden" name="acao" value="fechar"><button type="submit">Fechar chamado</button>
+      </form>
+      {% endif %}
+      {% if chamado.aberto %}
+      <form method="post" action="{% url 'painel:acao' chamado.protocolo %}" class="linha">{% csrf_token %}
+        <input type="hidden" name="acao" value="reclassificar">
+        <select name="categoria" aria-label="Reclassificar categoria">
+          {% for nome, horas in categorias %}<option value="{{ nome }}" {% if nome == chamado.categoria %}selected{% endif %}>{{ nome }} ({{ horas }}h)</option>{% endfor %}
+        </select>
+        <button type="submit">Reclassificar</button>
       </form>
       {% endif %}
       {% if not chamado.aberto %}

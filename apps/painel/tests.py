@@ -70,9 +70,46 @@ class PainelTest(TestCase):
         self.acao(acao="resolver", solucao="ERP reinstalado.")
         self.chamado.refresh_from_db()
         self.assertEqual(self.chamado.status, Chamado.Status.RESOLVIDO)
-        self.assertFalse(Conversa.objects.get().ativa)
+        self.assertEqual(Conversa.objects.get().etapa, "pesquisa")  # pesquisa enviada ao colaborador
+        self.assertTrue(Mensagem.objects.filter(texto__contains="Pesquisa de satisfação").exists())
 
         self.acao(acao="reabrir", nota="Voltou a fechar")
         self.chamado.refresh_from_db()
         self.assertEqual(self.chamado.status, Chamado.Status.EM_FILA)
         self.assertTrue(self.chamado.eventos.filter(tipo="reaberto").exists())
+
+    # --- SLA ----------------------------------------------------------------
+    def test_fila_e_detalhe_mostram_sla(self):
+        self.client.login(username="ana", password="senha-forte-123")
+        r = self.client.get("/painel/")
+        self.assertContains(r, 'class="sla verde"')
+        r = self.client.get(self.url)
+        self.assertContains(r, "SLA: 72h úteis")  # opção 0 sem categoria = SLA de "Outros"
+
+    def test_filtro_e_alerta_de_sla_vencido(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        Chamado.objects.update(criado_em=timezone.now() - timedelta(days=30))
+        self.client.login(username="ana", password="senha-forte-123")
+        r = self.client.get("/painel/")
+        self.assertContains(r, "1 com SLA vencido")
+        self.assertContains(self.client.get("/painel/?sla=vermelho"), self.chamado.protocolo)
+        self.assertNotContains(self.client.get("/painel/?sla=verde"), f">{self.chamado.protocolo}<")
+
+    def test_reclassificar_muda_o_sla(self):
+        self.client.login(username="ana", password="senha-forte-123")
+        self.acao(acao="reclassificar", categoria="Acesso e login")
+        self.chamado.refresh_from_db()
+        self.assertEqual((self.chamado.categoria, self.chamado.sla_horas), ("Acesso e login", 8))
+        self.assertTrue(self.chamado.eventos.filter(tipo="reclassif", descricao__contains="72h → 8h").exists())
+
+    def test_detalhe_mostra_pesquisa_respondida(self):
+        from apps.chamados.servicos import TicketService
+
+        TicketService().registrar_pesquisa(self.chamado, "insatisfeito", "Demorou muito")
+        self.client.login(username="ana", password="senha-forte-123")
+        r = self.client.get(self.url)
+        self.assertContains(r, "Insatisfeito")
+        self.assertContains(r, "Demorou muito")
