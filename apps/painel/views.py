@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
@@ -39,9 +39,8 @@ def _orquestrador():
     return ConversationOrchestrator(WebChannel())
 
 
-@require_GET
-@atendente
-def fila(request):
+def _filtrar(request, limite=300):
+    """Chamados conforme os filtros da fila (status, prioridade, SLA, busca, só os meus)."""
     status = request.GET.get("status", "abertos")
     qs = Chamado.objects.select_related("responsavel")
     if status == "abertos":
@@ -56,11 +55,33 @@ def fila(request):
     if busca:
         qs = qs.filter(Q(protocolo__icontains=busca) | Q(nome_colaborador__icontains=busca)
                        | Q(contato__icontains=busca) | Q(descricao__icontains=busca))
-    contagem = dict(Chamado.objects.values_list("status").annotate(n=Count("id")).values_list("status", "n"))
-    chamados = list(qs.prefetch_related("pesquisas").order_by("prioridade", "criado_em")[:300])
+    qs = qs.prefetch_related("pesquisas").order_by("prioridade", "criado_em")
+    chamados = list(qs[:limite] if limite else qs)
     cor_sla = request.GET.get("sla", "")
     if cor_sla in (sla.VERDE, sla.AMARELO, sla.VERMELHO):
         chamados = [c for c in chamados if c.sla.cor == cor_sla]
+    return chamados, status, cor_sla, busca
+
+
+@require_GET
+@atendente
+def exportar(request):
+    """Planilha Excel com os chamados do filtro atual da fila (sem o limite de 300 da tela)."""
+    from .exportacao import planilha_chamados
+
+    chamados, *_ = _filtrar(request, limite=None)
+    conteudo = planilha_chamados(chamados)
+    nome = f"chamados_{timezone.localtime():%Y-%m-%d_%H%M}.xlsx"
+    resposta = HttpResponse(conteudo, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    resposta["Content-Disposition"] = f'attachment; filename="{nome}"'
+    return resposta
+
+
+@require_GET
+@atendente
+def fila(request):
+    chamados, status, cor_sla, busca = _filtrar(request)
+    contagem = dict(Chamado.objects.values_list("status").annotate(n=Count("id")).values_list("status", "n"))
     em_aberto = Chamado.objects.filter(status__in=Chamado.ABERTOS).only(
         "status", "sla_horas", "prazo_sla", "criado_em", "resolvido_em")
     sla_vencidos = sum(1 for c in em_aberto if c.sla.cor == sla.VERMELHO)

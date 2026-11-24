@@ -27,6 +27,8 @@
   </select>
   <label class="check"><input type="checkbox" name="meus" value="1" {% if meus %}checked{% endif %}> Só os meus</label>
   <button type="submit">Filtrar</button>
+  <a class="botao" href="{% url 'painel:exportar' %}?{{ request.GET.urlencode }}"
+     title="Baixa uma planilha com os chamados deste filtro (use a aba Todos para exportar todos)">⬇ Exportar Excel</a>
 </form>
 
 <div class="tabela-rolagem">

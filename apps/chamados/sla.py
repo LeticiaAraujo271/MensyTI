@@ -3,7 +3,7 @@ SLA dos chamados, contado em HORAS ÚTEIS.
 
 Horas úteis = a janela de atendimento configurada no .env (BOT_HORARIO_DIAS, BOT_HORARIO_INICIO,
 BOT_HORARIO_FIM; padrão: segunda a sexta, das 8h às 18h). Um chamado aberto às 20h começa a contar
-às 8h do próximo dia útil. Feriados ainda não são descontados.
+às 8h do próximo dia útil. Os FERIADOS cadastrados no Admin (Chamados > Feriados) não contam.
 
 Cores (percentual do SLA já consumido):
   verde     menos da metade
@@ -20,6 +20,23 @@ from django.utils import timezone
 
 VERDE, AMARELO, VERMELHO = "verde", "amarelo", "vermelho"
 
+_cache_feriados: frozenset | None = None
+
+
+def feriados() -> frozenset:
+    """Datas dos feriados cadastrados (em memória; recarrega quando um feriado muda no Admin)."""
+    global _cache_feriados
+    if _cache_feriados is None:
+        from .models import Feriado
+
+        _cache_feriados = frozenset(Feriado.objects.values_list("data", flat=True))
+    return _cache_feriados
+
+
+def limpar_cache_feriados(**kwargs) -> None:
+    global _cache_feriados
+    _cache_feriados = None
+
 
 def _janela(cfg: dict | None = None):
     cfg = cfg or settings.BOT
@@ -32,9 +49,11 @@ def _expediente(dia, inicio: time, fim: time, tz):
             timezone.make_aware(datetime.combine(dia, fim), tz))
 
 
-def somar_horas_uteis(inicio: datetime, horas: float, cfg: dict | None = None) -> datetime:
+def somar_horas_uteis(inicio: datetime, horas: float, cfg: dict | None = None,
+                      dias_sem_expediente=None) -> datetime:
     """Data/hora em que se completam `horas` úteis a partir de `inicio`."""
     dias, h_ini, h_fim = _janela(cfg)
+    fechados = feriados() if dias_sem_expediente is None else dias_sem_expediente
     if not dias or h_fim <= h_ini:
         return inicio + timedelta(hours=horas)
     tz = timezone.get_current_timezone()
@@ -42,7 +61,7 @@ def somar_horas_uteis(inicio: datetime, horas: float, cfg: dict | None = None) -
     restante = timedelta(hours=horas)
     dia = atual.date()
     for _ in range(3660):  # limite de segurança: 10 anos
-        if dia.weekday() in dias:
+        if dia.weekday() in dias and dia not in fechados:
             abre, fecha = _expediente(dia, h_ini, h_fim, tz)
             comeco = max(atual, abre)
             if comeco < fecha:
@@ -54,11 +73,13 @@ def somar_horas_uteis(inicio: datetime, horas: float, cfg: dict | None = None) -
     return atual + restante
 
 
-def horas_uteis_entre(inicio: datetime, fim: datetime, cfg: dict | None = None) -> float:
+def horas_uteis_entre(inicio: datetime, fim: datetime, cfg: dict | None = None,
+                      dias_sem_expediente=None) -> float:
     """Quantas horas úteis passaram entre `inicio` e `fim`."""
     if fim <= inicio:
         return 0.0
     dias, h_ini, h_fim = _janela(cfg)
+    fechados = feriados() if dias_sem_expediente is None else dias_sem_expediente
     if not dias or h_fim <= h_ini:
         return (fim - inicio).total_seconds() / 3600
     tz = timezone.get_current_timezone()
@@ -66,7 +87,7 @@ def horas_uteis_entre(inicio: datetime, fim: datetime, cfg: dict | None = None) 
     total = timedelta()
     dia = inicio.date()
     while dia <= fim.date():
-        if dia.weekday() in dias:
+        if dia.weekday() in dias and dia not in fechados:
             abre, fecha = _expediente(dia, h_ini, h_fim, tz)
             a, b = max(inicio, abre), min(fim, fecha)
             if b > a:

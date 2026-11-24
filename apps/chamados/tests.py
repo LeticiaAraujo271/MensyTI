@@ -2,10 +2,11 @@
 from datetime import datetime
 from types import SimpleNamespace
 
-from django.test import SimpleTestCase, override_settings
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from . import sla
+from .models import Feriado
 
 BOT_TESTE = {"HORARIO_DIAS": [0, 1, 2, 3, 4], "HORARIO_INICIO": "08:00", "HORARIO_FIM": "18:00"}
 
@@ -21,7 +22,11 @@ def chamado(criado_em, horas, status="em_fila", resolvido_em=None):
 
 
 @override_settings(BOT=BOT_TESTE, SLA_PADRAO_HORAS=72)
-class HorasUteis(SimpleTestCase):
+class HorasUteis(TestCase):
+    def setUp(self):
+        Feriado.objects.all().delete()  # os testes definem os próprios feriados
+        sla.limpar_cache_feriados()
+
     def test_soma_dentro_do_mesmo_dia(self):
         self.assertEqual(sla.somar_horas_uteis(hora(23, 9), 8), hora(23, 17))
 
@@ -45,7 +50,11 @@ class HorasUteis(SimpleTestCase):
 
 
 @override_settings(BOT=BOT_TESTE, SLA_PADRAO_HORAS=72)
-class Cores(SimpleTestCase):
+class Cores(TestCase):
+    def setUp(self):
+        Feriado.objects.all().delete()
+        sla.limpar_cache_feriados()
+
     def test_verde_antes_da_metade(self):
         s = sla.situacao(chamado(hora(23, 8), 8), agora=hora(23, 11, 59))
         self.assertEqual((s.cor, s.rotulo), (sla.VERDE, "No prazo"))
@@ -67,3 +76,47 @@ class Cores(SimpleTestCase):
     def test_resolvido_depois_do_prazo_fica_vencido(self):
         c = chamado(hora(23, 8), 8, status="fechado", resolvido_em=hora(24, 9))
         self.assertEqual(sla.situacao(c).rotulo, "Vencido")
+
+
+@override_settings(BOT=BOT_TESTE, SLA_PADRAO_HORAS=72)
+class Feriados(TestCase):
+    def setUp(self):
+        Feriado.objects.all().delete()
+        sla.limpar_cache_feriados()
+
+    def tearDown(self):
+        sla.limpar_cache_feriados()  # o rollback do teste não avisa o cache
+
+    def test_feriado_nao_conta_no_prazo(self):
+        # quarta 25/11 é feriado: segunda 14h + 24h úteis = 4h seg + 10h ter + (pula qua) + 10h qui
+        Feriado.objects.create(data=hora(25, 0).date(), nome="Feriado de teste")
+        self.assertEqual(sla.somar_horas_uteis(hora(23, 14), 24), hora(26, 18))
+
+    def test_feriado_nao_conta_nas_horas_consumidas(self):
+        Feriado.objects.create(data=hora(24, 0).date(), nome="Feriado de teste")
+        self.assertAlmostEqual(sla.horas_uteis_entre(hora(23, 17), hora(25, 9)), 2)
+
+    def test_cadastrar_feriado_no_admin_atualiza_na_hora(self):
+        self.assertAlmostEqual(sla.horas_uteis_entre(hora(24, 8), hora(24, 18)), 10)
+        f = Feriado.objects.create(data=hora(24, 0).date(), nome="Feriado de teste")
+        self.assertAlmostEqual(sla.horas_uteis_entre(hora(24, 8), hora(24, 18)), 0)
+        f.delete()
+        self.assertAlmostEqual(sla.horas_uteis_entre(hora(24, 8), hora(24, 18)), 10)
+
+    def test_feriados_nacionais(self):
+        from datetime import date
+
+        from .feriados_nacionais import feriados_do_ano, pascoa
+
+        self.assertEqual(pascoa(2026), date(2026, 4, 5))
+        self.assertEqual(pascoa(2027), date(2027, 3, 28))
+        datas = dict(feriados_do_ano(2026))
+        self.assertEqual(datas[date(2026, 4, 3)], "Sexta-feira Santa")
+        self.assertIn(date(2026, 11, 20), datas)
+        self.assertEqual(len(datas), 10)
+
+    def test_migracao_cadastrou_os_feriados_nacionais(self):
+        from django.core.management import call_command
+
+        call_command("carregar_feriados", ano=[2026], stdout=__import__("io").StringIO())
+        self.assertTrue(Feriado.objects.filter(data=hora(25, 0).date().replace(month=12)).exists())

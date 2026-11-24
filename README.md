@@ -320,8 +320,8 @@ Para conversar pelo terminal: `python manage.py simular_conversa --novo`
 ### SLA dos chamados
 
 Todo chamado recebe, na abertura, o SLA da sua categoria, em **horas úteis**: só conta o horário de
-atendimento (`BOT_HORARIO_*`, padrão segunda a sexta, das 8h às 18h). Um chamado aberto às 20h
-começa a contar às 8h do próximo dia útil.
+atendimento (`BOT_HORARIO_*`, padrão segunda a sexta, das 8h às 18h) e **não contam os feriados**.
+Um chamado aberto às 20h começa a contar às 8h do próximo dia útil.
 
 | Opção | Categoria | SLA (horas úteis) | Por quê |
 |---|---|---|---|
@@ -353,7 +353,18 @@ começa a contar às 8h do próximo dia útil.
 - Quando o chamado é resolvido, o SLA congela: **Cumprido** (resolvido no prazo) ou **Vencido**.
 - Para mudar os prazos: Admin → **Categorias** → coluna "SLA (horas úteis)". Vale para os chamados
   abertos depois da mudança, ou para os que forem reclassificados.
-- Ainda não descontam: feriados e o tempo em "Aguardando colaborador".
+- O tempo em "Aguardando colaborador" continua contando no SLA.
+
+**Feriados:** os feriados nacionais de 2025 a 2030 já vêm cadastrados (Confraternização Universal,
+Sexta-feira Santa, Tiradentes, Dia do Trabalho, Independência, Nossa Senhora Aparecida, Finados,
+Proclamação da República, Consciência Negra e Natal). No Admin, em **Chamados → Feriados**, dá para:
+
+- incluir os **estaduais, municipais e pontos facultativos** em que a empresa não trabalha
+  (ex.: Carnaval, Corpus Christi, aniversário da cidade);
+- apagar um feriado em que a empresa trabalha.
+
+A mudança vale na hora para o cálculo das cores e do percentual. Para cadastrar os nacionais de mais
+anos: `python manage.py carregar_feriados --ano 2031` (sem `--ano`, carrega o ano atual e os 4 seguintes).
 
 ### Pesquisa de satisfação
 
@@ -380,6 +391,31 @@ Como você avalia o atendimento da TI?
 - Onde ver as respostas: no detalhe do chamado no painel (com destaque nas negativas), na coluna
   "Responsável" da fila, no histórico do chamado e no Admin, em **Pesquisas de satisfação** (com
   filtro por resposta e data).
+
+### Exportar os chamados para Excel
+
+Na fila do painel, o botão **⬇ Exportar Excel** baixa uma planilha (`.xlsx`) com os chamados do
+**filtro que está na tela**: aba de status (Abertos, Em atendimento, Fechado... ou **Todos**),
+prioridade, SLA (no prazo, atenção, vencido), busca e "só os meus". A planilha não tem o limite de
+300 linhas da tela.
+
+| Coluna | Conteúdo |
+|---|---|
+| Número do chamado | Protocolo (ex.: TI-2026-000123) |
+| Colaborador | Nome de quem abriu |
+| Assunto | Categoria (ou "Sem categoria") |
+| Status | Em fila, Em atendimento, Aguardando colaborador, Resolvido, Fechado... |
+| SLA | No prazo, Atenção, Vencido ou Cumprido, com a cor verde, amarela ou vermelha |
+| SLA (horas úteis), SLA consumido (%), Prazo do SLA | Detalhes do SLA |
+| Responsável | Analista que assumiu |
+| Canal | Portal web ou WhatsApp |
+| Aberto em | Data e hora de abertura |
+| Data do fechamento | Quando foi resolvido (vazio se ainda está aberto) |
+| Pesquisa de satisfação | Muito satisfeito, Satisfeito, Insatisfeito ou Muito insatisfeito |
+| Observação da pesquisa | O que o colaborador escreveu |
+
+A planilha já vem com filtros no cabeçalho e a primeira linha congelada. As datas estão no horário
+de Brasília.
 
 A avaliação de 1 a 5 continua existindo só para os casos **resolvidos no autoatendimento**, sem
 chamado.
@@ -480,7 +516,7 @@ túnel da internet até o seu `runserver`.
 | Fase | Escopo | Situação |
 |---|---|---|
 | 1. MVP portal | Chat web, identificação, base, texto livre, chamado com protocolo/prioridade, painel básico, perfis, testes | ✅ feito |
-| 2. Painel TI | SLA por categoria (verde/amarelo/vermelho) e pesquisa de satisfação ✅; atribuição a outro analista, notificações (e-mail/Teams), respostas prontas | em andamento |
+| 2. Painel TI | SLA por categoria (verde/amarelo/vermelho, sem feriados), pesquisa de satisfação e exportação para Excel ✅; atribuição a outro analista, notificações (e-mail/Teams), respostas prontas | em andamento |
 | 3. Base de conhecimento | Versões e aprovação de artigos, horários e feriados editáveis no Admin, dashboard de métricas | a fazer |
 | 4. WhatsApp | Fila de envio com retentativas e backoff, indicador de saúde, link do portal quando o canal cair | a fazer |
 | 5. Segurança e LGPD | Retenção configurável, exportação e remoção de dados, auditoria de acessos, acompanhamento do chamado por protocolo com validação por e-mail, limites contra abuso por IP | a fazer |

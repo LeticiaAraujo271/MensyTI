@@ -10,6 +10,7 @@ urlpatterns = [
                                                 redirect_authenticated_user=True), name="login"),
     path("sair/", auth_views.LogoutView.as_view(), name="sair"),
     path("", views.fila, name="fila"),
+    path("exportar.xlsx", views.exportar, name="exportar"),
     path("chamado/<str:protocolo>/", views.detalhe, name="detalhe"),
     path("chamado/<str:protocolo>/acao/", views.acao, name="acao"),
     path("chamado/<str:protocolo>/mensagens/", views.mensagens, name="mensagens"),

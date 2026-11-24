@@ -115,3 +115,6 @@ small { color: var(--suave); }
 .pesquisa.negativa { border-color: var(--sla-vermelho); }
 .pesquisa p { margin: 4px 0 0; }
 .filtros select { width: auto; }
+a.botao { display: inline-block; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--primaria);
+          background: var(--primaria); color: var(--primaria-texto); text-decoration: none; white-space: nowrap; }
+a.botao:hover { background: var(--primaria-forte); border-color: var(--primaria-forte); }

@@ -145,3 +145,18 @@ class PesquisaSatisfacao(models.Model):
 
         if self.resposta in self.EXIGEM_OBSERVACAO and not (self.observacao or "").strip():
             raise ValidationError({"observacao": "A observação é obrigatória para respostas de insatisfação."})
+
+
+class Feriado(models.Model):
+    """Dia sem expediente: não conta no SLA dos chamados."""
+
+    data = models.DateField(unique=True)
+    nome = models.CharField(max_length=80)
+
+    class Meta:
+        ordering = ["data"]
+        verbose_name = "feriado"
+        verbose_name_plural = "feriados"
+
+    def __str__(self):
+        return f"{self.data:%d/%m/%Y} - {self.nome}"

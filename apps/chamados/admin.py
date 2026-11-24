@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Chamado, EventoChamado, PesquisaSatisfacao
+from .models import Chamado, EventoChamado, Feriado, PesquisaSatisfacao
 
 
 class EventoInline(admin.TabularInline):
@@ -48,3 +48,17 @@ class PesquisaSatisfacaoAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False  # quem responde é o colaborador, pelo chat
+
+
+@admin.register(Feriado)
+class FeriadoAdmin(admin.ModelAdmin):
+    """Dias sem expediente: não contam no SLA. Os nacionais já vêm cadastrados (manage.py carregar_feriados)."""
+
+    list_display = ("data", "dia_da_semana", "nome")
+    list_filter = (("data", admin.DateFieldListFilter),)
+    search_fields = ("nome",)
+    date_hierarchy = "data"
+
+    @admin.display(description="Dia da semana")
+    def dia_da_semana(self, obj):
+        return ("segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo")[obj.data.weekday()]

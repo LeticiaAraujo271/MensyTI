@@ -13,7 +13,7 @@ def preencher(apps, schema_editor):
     for ch in Chamado.objects.all().only("id", "categoria", "criado_em"):
         horas = sla.get(ch.categoria) or padrao
         Chamado.objects.filter(pk=ch.pk).update(sla_horas=horas,
-                                                prazo_sla=somar_horas_uteis(ch.criado_em, horas))
+                                                prazo_sla=somar_horas_uteis(ch.criado_em, horas, dias_sem_expediente=set()))
 
 
 class Migration(migrations.Migration):

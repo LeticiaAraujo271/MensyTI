@@ -113,3 +113,45 @@ class PainelTest(TestCase):
         r = self.client.get(self.url)
         self.assertContains(r, "Insatisfeito")
         self.assertContains(r, "Demorou muito")
+
+    # --- Excel ---------------------------------------------------------------
+    def test_exportar_excel_com_os_campos_pedidos(self):
+        from io import BytesIO
+
+        from openpyxl import load_workbook
+
+        from apps.chamados.servicos import TicketService
+
+        self.chamado.nome_colaborador = "=HYPERLINK(\"http://x\")"  # texto do usuário nunca vira fórmula
+        self.chamado.save()
+        TicketService().registrar_pesquisa(self.chamado, "insatisfeito", "Demorou muito")
+        self.client.login(username="ana", password="senha-forte-123")
+        r = self.client.get("/painel/exportar.xlsx?status=todos")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("spreadsheetml", r["Content-Type"])
+        self.assertIn("attachment", r["Content-Disposition"])
+
+        ws = load_workbook(BytesIO(r.content)).active
+        cab = [c.value for c in ws[1]]
+        for campo in ("Número do chamado", "Colaborador", "Assunto", "Status", "SLA", "Responsável", "Canal",
+                      "Aberto em", "Data do fechamento", "Pesquisa de satisfação", "Observação da pesquisa"):
+            self.assertIn(campo, cab)
+        linha = {cab[i]: c.value for i, c in enumerate(ws[2])}
+        self.assertEqual(linha["Número do chamado"], self.chamado.protocolo)
+        self.assertEqual(linha["Status"], "Em fila")
+        self.assertEqual(linha["SLA"], "No prazo")
+        self.assertEqual(linha["Canal"], "Portal web")
+        self.assertEqual(linha["Pesquisa de satisfação"], "Insatisfeito")
+        self.assertEqual(linha["Observação da pesquisa"], "Demorou muito")
+        self.assertIsNone(linha["Data do fechamento"])
+        self.assertEqual(ws.cell(row=2, column=cab.index("Colaborador") + 1).data_type, "s")
+
+    def test_exportar_respeita_filtro_e_permissao(self):
+        self.assertEqual(self.client.get("/painel/exportar.xlsx").status_code, 302)  # exige login
+        from io import BytesIO
+
+        from openpyxl import load_workbook
+
+        self.client.login(username="ana", password="senha-forte-123")
+        ws = load_workbook(BytesIO(self.client.get("/painel/exportar.xlsx?status=fechado").content)).active
+        self.assertEqual(ws.max_row, 1)  # só o cabeçalho: nenhum chamado fechado
