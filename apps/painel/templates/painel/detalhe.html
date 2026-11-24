@@ -17,7 +17,7 @@
       <dt>Setor</dt><dd>{{ chamado.setor|default:"—" }}</dd>
       <dt>Centro de custo</dt><dd>{{ chamado.centro_custo|default:"—" }}</dd>
       <dt>Contato</dt><dd>{{ chamado.contato|default:"—" }}</dd>
-      <dt>Canal</dt><dd>{{ chamado.canal|default:"—" }}</dd>
+      <dt>Canal</dt><dd>{{ chamado.canal|default:"—" }}{% if chamado.conversa and chamado.conversa.identificador|slice:":10" == "simulador-" %} · <span class="teste">🧪 teste do simulador (nada foi enviado ao WhatsApp)</span>{% endif %}</dd>
       <dt>Assunto</dt><dd>{{ chamado.categoria|default:"—" }}</dd>
       <dt>Orientação vista</dt><dd>{{ chamado.orientacao|default:"—" }}</dd>
       <dt>Motivo</dt><dd>{{ chamado.motivo|default:"—" }}</dd>

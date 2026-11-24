@@ -1,0 +1,171 @@
+{% extends "painel/base.html" %}
+{% load static %}
+{% block titulo %}Simulador do WhatsApp · Painel de TI{% endblock %}
+{% block cabeca %}<link rel="stylesheet" href="{% static 'painel/simulador.css' %}">{% endblock %}
+{% block conteudo %}
+<div class="titulo-linha">
+  <h1>Simulador do WhatsApp</h1>
+  <span class="teste">🧪 modo de teste: nada é enviado para nenhum celular</span>
+</div>
+
+<div class="sim-grade">
+  <div class="celular" aria-label="Prévia da conversa no WhatsApp">
+    <div class="cel-topo">
+      <span class="cel-voltar" aria-hidden="true">‹</span>
+      <span class="cel-avatar" aria-hidden="true">TI</span>
+      <div class="cel-nome">
+        <b>Central de TI</b>
+        <small id="cel-status">online</small>
+      </div>
+    </div>
+    <div class="cel-faixa" id="cel-chamado" hidden></div>
+    <div class="cel-conversa" id="cel-conversa" aria-live="polite">
+      <div class="cel-aviso">🔒 As mensagens são protegidas. Toque para saber mais.</div>
+      <div class="cel-dica" id="cel-dica">Mande um <b>oi</b> para começar, como o colaborador faria no WhatsApp.</div>
+    </div>
+    <form class="cel-entrada" id="cel-form" autocomplete="off">
+      <label for="cel-texto" class="sr-only">Mensagem</label>
+      <textarea id="cel-texto" rows="1" maxlength="2000" placeholder="Mensagem" required></textarea>
+      <button type="submit" aria-label="Enviar">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg>
+      </button>
+    </form>
+  </div>
+
+  <section class="cartao sim-ajuda">
+    <h2>Como usar</h2>
+    <ol>
+      <li>Escreva no celular ao lado como se fosse o colaborador (ex.: <b>oi</b>). No WhatsApp não há
+        botões: o colaborador responde com o <b>número</b> da opção.</li>
+      <li>Abra um chamado (ex.: opção <b>0</b>). Ele aparece na <a href="{% url 'painel:fila' %}" target="_blank">fila</a>
+        com o canal <b>whatsapp</b> e a marca 🧪 simulador.</li>
+      <li>No chamado, responda e resolva pelo painel: a resposta e a pesquisa de satisfação chegam
+        aqui, como chegariam no celular.</li>
+    </ol>
+    <p><small>O fluxo é o mesmo da produção: cada mensagem vira um evento do Digisac
+      (<code>message.created</code>), passa pelo mesmo motor e pelo canal WhatsApp. A diferença é que
+      a resposta fica só aqui, em vez de ir para o Digisac.</small></p>
+
+    <h2>Testes</h2>
+    <div class="acoes">
+      <button type="button" id="sim-nova">📱 Novo contato</button>
+      <button type="button" id="sim-apagar">🗑 Apagar testes</button>
+    </div>
+    <p><small><b>Novo contato</b> simula outro número (pede a identificação de novo).
+      <b>Apagar testes</b> remove as conversas e os chamados criados aqui (os reais não são afetados).</small></p>
+    <p><small>Contato simulado: <code>{{ contato }}</code></small></p>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  "use strict";
+  const URLS = {
+    mensagens: "{% url 'painel:simulador_mensagens' %}",
+    enviar: "{% url 'painel:simulador_enviar' %}",
+    nova: "{% url 'painel:simulador_nova' %}",
+    apagar: "{% url 'painel:simulador_apagar' %}",
+  };
+  const caixa = document.getElementById("cel-conversa");
+  const form = document.getElementById("cel-form");
+  const campo = document.getElementById("cel-texto");
+  const faixa = document.getElementById("cel-chamado");
+  const status = document.getElementById("cel-status");
+  const dica = document.getElementById("cel-dica");
+  let ultimo = 0;
+  let enviando = false;
+
+  function cookie(nome) {
+    const m = document.cookie.match(new RegExp("(?:^|; )" + nome + "=([^;]*)"));
+    return m ? decodeURIComponent(m[1]) : "";
+  }
+
+  // Formatação do WhatsApp: *negrito*, _itálico_, ~riscado~, ```monoespaçado```. Sempre escapa HTML.
+  function formatar(t) {
+    return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;")
+      .replace(/```([^`]+)```/g, "<code>$1</code>")
+      .replace(/\*([^*\n]+)\*/g, "<strong>$1</strong>")
+      .replace(/(^|[\s(])_([^_\n]+)_(?=[\s).,!?:;]|$)/g, "$1<em>$2</em>")
+      .replace(/~([^~\n]+)~/g, "<s>$1</s>")
+      .replace(/\n/g, "<br>");
+  }
+
+  function adicionar(m) {
+    if (dica) dica.hidden = true;
+    const div = document.createElement("div");
+    div.className = "cel-msg " + (m.de_mim ? "enviada" : "recebida");
+    div.innerHTML = formatar(m.texto) + '<span class="cel-hora">' + m.hora +
+      (m.de_mim ? ' <span class="cel-check" aria-label="lida">✓✓</span>' : "") + "</span>";
+    caixa.appendChild(div);
+  }
+
+  async function atualizar() {
+    try {
+      const r = await fetch(URLS.mensagens + "?depois=" + ultimo, { credentials: "same-origin" });
+      if (!r.ok) return;
+      const d = await r.json();
+      d.mensagens.forEach(function (m) { adicionar(m); ultimo = m.id; });
+      if (d.mensagens.length) caixa.scrollTop = caixa.scrollHeight;
+      if (d.chamado) {
+        faixa.hidden = false;
+        faixa.textContent = "📋 Chamado " + d.chamado.protocolo + " · " + d.chamado.status;
+      } else {
+        faixa.hidden = true;
+      }
+    } catch (e) { /* sem rede: tenta de novo */ }
+  }
+
+  async function post(url, dados) {
+    const corpo = new URLSearchParams(dados || {});
+    return fetch(url, {
+      method: "POST", credentials: "same-origin", body: corpo,
+      headers: { "X-CSRFToken": cookie("csrftoken") },
+    });
+  }
+
+  form.addEventListener("submit", async function (ev) {
+    ev.preventDefault();
+    const texto = campo.value.trim();
+    if (!texto || enviando) return;
+    enviando = true;
+    campo.value = "";
+    status.textContent = "digitando…";
+    try {
+      await post(URLS.enviar, { texto: texto });
+      await atualizar();
+    } finally {
+      status.textContent = "online";
+      enviando = false;
+      campo.focus();
+    }
+  });
+  campo.addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); form.requestSubmit(); }
+  });
+
+  function recomecar() {
+    caixa.querySelectorAll(".cel-msg").forEach(function (el) { el.remove(); });
+    ultimo = 0;
+    if (dica) dica.hidden = false;
+    faixa.hidden = true;
+  }
+  document.getElementById("sim-nova").addEventListener("click", async function () {
+    await post(URLS.nova);
+    recomecar();
+  });
+  document.getElementById("sim-apagar").addEventListener("click", async function () {
+    if (!confirm("Apagar todas as conversas e chamados criados pelo simulador?")) return;
+    const r = await post(URLS.apagar);
+    const d = await r.json();
+    recomecar();
+    alert("Testes apagados (" + d.chamados + " chamado(s) de teste).");
+  });
+
+  atualizar();
+  setInterval(function () { if (!document.hidden) atualizar(); }, 3000);
+})();
+</script>
+{% endblock %}

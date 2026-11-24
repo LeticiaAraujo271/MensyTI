@@ -42,7 +42,7 @@ def _orquestrador():
 def _filtrar(request, limite=300):
     """Chamados conforme os filtros da fila (status, prioridade, SLA, busca, só os meus)."""
     status = request.GET.get("status", "abertos")
-    qs = Chamado.objects.select_related("responsavel")
+    qs = Chamado.objects.select_related("responsavel", "conversa")
     if status == "abertos":
         qs = qs.filter(status__in=Chamado.ABERTOS)
     elif status in S.values:

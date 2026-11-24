@@ -15,6 +15,7 @@
     <nav>
       <a href="{% url 'painel:fila' %}">Fila</a>
       <a href="{% url 'painel:fila' %}?meus=1">Meus chamados</a>
+      <a href="{% url 'painel:simulador' %}">Simulador do WhatsApp</a>
       {% if user.is_staff %}<a href="{% url 'admin:index' %}">Administração</a>{% endif %}
       <form method="post" action="{% url 'painel:sair' %}">{% csrf_token %}
         <button type="submit" class="link">Sair ({{ user.get_username }})</button>

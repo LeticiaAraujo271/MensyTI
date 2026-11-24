@@ -164,3 +164,58 @@ class PainelTest(TestCase):
         self.assertContains(self.client.get("/painel/"), "1105 - Financeiro")
         self.assertContains(self.client.get("/painel/?q=1105&status=todos"), self.chamado.protocolo)
         self.assertContains(self.client.get(self.url), "Centro de custo")
+
+
+@override_settings(CENTRAL=CENTRAL_TESTE, WHATSAPP_ATIVO=True)
+class SimuladorWhatsAppTest(TestCase):
+    def setUp(self):
+        call_command("popular_orientacoes", verbosity=0)
+        call_command("configurar_perfis", stdout=io.StringIO())
+        self.analista = User.objects.create_user("ana", password="senha-forte-123")
+        self.analista.groups.add(Group.objects.get(name="Analista de TI"))
+        self.client.login(username="ana", password="senha-forte-123")
+
+    def falar(self, *textos):
+        for t in textos:
+            self.assertEqual(self.client.post("/painel/whatsapp/enviar/", {"texto": t}).status_code, 200)
+        return self.client.get("/painel/whatsapp/mensagens/").json()
+
+    def test_exige_login(self):
+        self.client.logout()
+        self.assertEqual(self.client.get("/painel/whatsapp/").status_code, 302)
+
+    def test_ciclo_completo_sem_enviar_nada_ao_digisac(self):
+        from unittest import mock
+
+        with mock.patch("apps.digisac.client.ClienteDigisac.enviar_texto") as enviar:
+            self.assertContains(self.client.get("/painel/whatsapp/"), "Simulador do WhatsApp")
+            d = self.falar(*IDENT, "0", "O ERP fecha sozinho")
+            textos = [m["texto"] for m in d["mensagens"]]
+            self.assertTrue(d["mensagens"][0]["de_mim"])
+            self.assertTrue(any("nome completo" in t for t in textos))
+            ch = Chamado.objects.get()
+            self.assertEqual(ch.canal, "whatsapp")
+            self.assertEqual(d["chamado"]["protocolo"], ch.protocolo)
+            self.assertContains(self.client.get("/painel/"), "simulador")
+
+            # O analista responde e resolve pelo painel: tudo chega no "celular".
+            url = f"/painel/chamado/{ch.protocolo}/acao/"
+            self.client.post(url, {"acao": "responder", "texto": "Pode tentar agora?"})
+            self.client.post(url, {"acao": "resolver", "solucao": "ERP atualizado."})
+            textos = [m["texto"] for m in self.client.get("/painel/whatsapp/mensagens/").json()["mensagens"]]
+            self.assertTrue(any(t.startswith("🙋 *ana* (TI): Pode tentar agora?") for t in textos))
+            self.assertTrue(any("ERP atualizado." in t for t in textos))
+            self.assertTrue(any("Pesquisa de satisfação" in t for t in textos))
+            self.falar("3", "Demorou")
+            self.assertEqual(ch.pesquisas.get().resposta, "insatisfeito")
+            enviar.assert_not_called()
+
+    def test_novo_contato_e_apagar_testes(self):
+        self.falar(*IDENT, "0", "O ERP fecha sozinho")
+        self.client.post("/painel/whatsapp/nova/")
+        d = self.falar("oi")
+        self.assertTrue(any("nome completo" in m["texto"] for m in d["mensagens"]))  # outro "número"
+        r = self.client.post("/painel/whatsapp/apagar/").json()
+        self.assertEqual(r["chamados"], 1)
+        self.assertFalse(Chamado.objects.exists())
+        self.assertFalse(Conversa.objects.exists())

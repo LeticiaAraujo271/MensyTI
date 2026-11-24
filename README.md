@@ -17,6 +17,7 @@ coloque o arquivo como `logo.svg` ou `logo.png` nessa pasta e religue a Central
 |---|---|
 | `/` | Colaborador: chat da Central de TI (celular e desktop) |
 | `/painel/` | Analistas: fila, atendimento, resposta, solução |
+| `/painel/whatsapp/` | Analistas: simulador do WhatsApp (prévia da conversa no celular, sem enviar nada) |
 | `/admin/` | Administradores: base de conhecimento, usuários, perfis, conversas, métricas |
 | `/webhooks/digisac/?token=...` | Provedor de WhatsApp (só com `WHATSAPP_ATIVO=true`) |
 
@@ -441,12 +442,48 @@ Fica no Admin, em **Orientações**. Um passo por linha. Alguns campos mudam o c
 ## WhatsApp (opcional)
 
 Fica desligado por padrão (`WHATSAPP_ATIVO=false`). Nesse caso o webhook ignora as mensagens e o
-portal funciona normalmente. Para ativar, quando houver as credenciais:
+portal funciona normalmente.
 
-1. No `.env`: `WHATSAPP_ATIVO=true`, `DIGISAC_URL`, `DIGISAC_TOKEN`, `DIGISAC_SERVICE_ID`,
-   `DIGISAC_WEBHOOK_TOKEN`. Comece com `DIGISAC_ENVIAR_MENSAGENS=false`, que só registra no log.
-2. Cadastre o webhook `https://SEU_DOMINIO/webhooks/digisac/?token=...` com o evento `message.created`.
-3. Desative o robô nativo do Digisac nessa conexão.
+### Simulador do WhatsApp (sem Digisac)
+
+No painel, menu **Simulador do WhatsApp** (`/painel/whatsapp/`): um celular na tela mostra a conversa
+exatamente como o colaborador vai ver no WhatsApp, com negrito, itálico, opções numeradas (sem botões)
+e a resposta do analista com o nome na frente. Nada é enviado a nenhum celular.
+
+- Cada mensagem digitada vira um evento do Digisac (`message.created`) e passa pelo mesmo motor e
+  pelo mesmo canal WhatsApp da produção.
+- Os chamados abertos ali aparecem na fila com o canal `whatsapp` e a marca **🧪 simulador**. Responda
+  e resolva pelo painel: a resposta, a solução e a pesquisa de satisfação chegam no "celular".
+- **Novo contato** simula outro número. **Apagar testes** remove as conversas e os chamados do
+  simulador (os reais não são afetados).
+- Funciona com o WhatsApp ligado ou desligado.
+
+### Ligar o WhatsApp de verdade (Digisac)
+
+O que é preciso:
+
+| Item | Onde conseguir |
+|---|---|
+| Conta no Digisac com uma conexão de WhatsApp ativa | Administrador do Digisac da empresa |
+| `DIGISAC_URL` | Endereço da conta, ex.: `https://suaempresa.digisac.app` |
+| `DIGISAC_TOKEN` | Digisac → Conta → API → **Tokens de acesso pessoal** |
+| `DIGISAC_SERVICE_ID` (opcional) | ID da conexão de WhatsApp que o bot vai usar |
+| Endereço público com **HTTPS** | Para o Digisac entregar as mensagens: servidor da empresa, Codespaces (porta pública) ou ngrok (só para teste) |
+
+Passo a passo:
+
+1. No `.env`, preencha `DIGISAC_URL`, `DIGISAC_TOKEN`, `DIGISAC_SERVICE_ID` e gere o
+   `DIGISAC_WEBHOOK_TOKEN` (`python -c "import secrets; print(secrets.token_urlsafe(32))"`).
+   Deixe `WHATSAPP_ATIVO=true` e, no começo, `DIGISAC_ENVIAR_MENSAGENS=false` (só registra no log).
+2. Confira: `python manage.py testar_digisac`. Ele mostra o que falta (`[FALTA]`) e a URL do webhook.
+3. No Digisac, cadastre o webhook `https://SEU_ENDERECO/webhooks/digisac/?token=SEU_TOKEN` com o
+   evento `message.created`, e **desative o robô nativo** do Digisac nessa conexão.
+4. Reinicie a Central (`instalar_servico.ps1 -Reiniciar`) e mande um "oi" para o número da conexão.
+   A conversa aparece no Admin, em **Conversas**, e o que o bot responderia aparece em
+   `logs\servidor.log` (`[simulação] POST /api/v1/messages`).
+5. Teste real de envio para um contato: `python manage.py testar_digisac --enviar-para ID_DO_CONTATO`
+   (o ID aparece no log do webhook, campo `contactId`).
+6. Tudo certo? Mude `DIGISAC_ENVIAR_MENSAGENS=true` e reinicie. A partir daí o bot responde no WhatsApp.
 
 Confirme as rotas da API na documentação da sua conta antes de ativar
 ([apps/digisac/client.py](apps/digisac/client.py)). O atendimento humano acontece no painel da Central.

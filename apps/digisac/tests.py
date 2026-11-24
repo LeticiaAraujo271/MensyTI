@@ -39,3 +39,32 @@ class WebhookTest(TestCase):
         c = Conversa.objects.get(canal="whatsapp", identificador="c1")
         self.assertEqual(Mensagem.objects.filter(conversa=c, autor="colaborador").count(), 1)
         self.assertTrue(Mensagem.objects.filter(conversa=c, autor="bot").exists())
+
+
+class TestarDigisacTest(__import__("django.test", fromlist=["SimpleTestCase"]).SimpleTestCase):
+    def _rodar(self, **digisac):
+        import io
+
+        from django.core.management import CommandError, call_command
+        from django.test import override_settings
+
+        cfg = {"URL": "", "TOKEN": "", "SERVICE_ID": "", "WEBHOOK_TOKEN": "", "ENVIAR_MENSAGENS": False,
+               "TIMEOUT_SEGUNDOS": 5, "DEPARTAMENTO_TI_ID": "", **digisac}
+        saida = io.StringIO()
+        with override_settings(DIGISAC=cfg):
+            try:
+                call_command("testar_digisac", stdout=saida)
+                return True, saida.getvalue()
+            except CommandError:
+                return False, saida.getvalue()
+
+    def test_valores_de_exemplo_contam_como_faltando(self):
+        ok, saida = self._rodar(URL="https://suaempresa.digisac.app", TOKEN="cole-aqui-o-token-pessoal",
+                                WEBHOOK_TOKEN="gere-um-segredo-aleatorio")
+        self.assertFalse(ok)
+        self.assertIn("[FALTA] DIGISAC_URL", saida)
+
+    def test_configuracao_completa(self):
+        ok, saida = self._rodar(URL="https://empresa.digisac.app", TOKEN="abc123xyz", WEBHOOK_TOKEN="s3gr3d0")
+        self.assertTrue(ok)
+        self.assertIn("/webhooks/digisac/?token=s3gr", saida)

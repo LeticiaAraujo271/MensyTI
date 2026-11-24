@@ -118,3 +118,4 @@ small { color: var(--suave); }
 a.botao { display: inline-block; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--primaria);
           background: var(--primaria); color: var(--primaria-texto); text-decoration: none; white-space: nowrap; }
 a.botao:hover { background: var(--primaria-forte); border-color: var(--primaria-forte); }
+.teste { color: var(--p2); font-weight: 600; }

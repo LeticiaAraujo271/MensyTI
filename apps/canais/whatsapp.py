@@ -12,6 +12,9 @@ from .base import ChannelAdapter
 
 log = logging.getLogger(__name__)
 
+# Contatos do simulador do painel: as mensagens ficam só no banco (nunca vão para o Digisac).
+PREFIXO_SIMULADOR = "simulador-"
+
 
 class WhatsAppChannel(ChannelAdapter):
     nome = "whatsapp"
@@ -30,6 +33,8 @@ class WhatsAppChannel(ChannelAdapter):
         return self._cliente
 
     def entregar(self, conversa, textos):
+        if conversa.identificador.startswith(PREFIXO_SIMULADOR):
+            return  # simulador do painel: o "celular" lê as mensagens direto do banco
         if not self.disponivel():
             log.warning("WhatsApp desativado: %d mensagem(ns) da conversa #%s ficaram só no histórico.",
                         len(textos), conversa.pk)

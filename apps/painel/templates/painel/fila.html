@@ -47,7 +47,7 @@
       <td>{{ c.categoria|default:"—" }}<br><small>{{ c.descricao|truncatechars:70 }}</small></td>
       <td><span class="status {{ c.status }}">{{ c.get_status_display }}</span>{% if c.fora_do_horario %}<br><small>🕒 fora do horário</small>{% endif %}</td>
       <td>{{ c.responsavel.get_username|default:"—" }}{% with p=c.pesquisas.all.0 %}{% if p %}<br><small title="Pesquisa de satisfação">{% include "painel/_pesquisa_emoji.html" %} {{ p.get_resposta_display }}</small>{% endif %}{% endwith %}</td>
-      <td>{{ c.canal|default:"—" }}</td>
+      <td>{{ c.canal|default:"—" }}{% if c.conversa and c.conversa.identificador|slice:":10" == "simulador-" %}<br><small class="teste">🧪 simulador</small>{% endif %}</td>
       <td>{{ c.criado_em|date:"d/m H:i" }}</td>
     </tr>
   {% empty %}
