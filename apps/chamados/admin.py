@@ -35,6 +35,8 @@ class ChamadoAdmin(admin.ModelAdmin):
     @admin.display(description="SLA")
     def situacao_sla(self, obj):
         s = obj.sla
+        if s.reprovado or s.aguardando_aprovacao:
+            return s.rotulo
         return f"{ {'verde': '🟢', 'amarelo': '🟡'}.get(s.cor, '🔴') } {s.rotulo} ({s.percentual}%)"
 
     def save_model(self, request, obj, form, change):

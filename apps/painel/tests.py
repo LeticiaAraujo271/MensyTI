@@ -241,3 +241,11 @@ class SimuladorWhatsAppTest(TestCase):
         self.assertFalse(Chamado.objects.exists())
         self.assertFalse(Conversa.objects.exists())
 
+
+
+class FormatacaoWhatsAppTest(TestCase):
+    def test_negrito_sem_abrir_brecha_de_html(self):
+        from apps.painel.templatetags.formatacao import whatsapp
+
+        self.assertEqual(whatsapp("Qual é o *nome completo*?\nok"), "Qual é o <strong>nome completo</strong>?<br>ok")
+        self.assertEqual(whatsapp("*<script>x</script>*"), "<strong>&lt;script&gt;x&lt;/script&gt;</strong>")

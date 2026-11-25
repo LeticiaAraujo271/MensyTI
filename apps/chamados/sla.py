@@ -118,6 +118,7 @@ class SituacaoSLA:
     prazo: datetime | None
     encerrado: bool         # chamado resolvido/fechado: SLA congelado no momento da solução
     aguardando_aprovacao: bool = False  # o SLA ainda não começou
+    reprovado: bool = False  # solicitação reprovada: o SLA da TI nunca começou (não é "Cumprido")
 
     @property
     def percentual(self) -> int:
@@ -131,6 +132,8 @@ class SituacaoSLA:
     def rotulo(self) -> str:
         if self.aguardando_aprovacao:
             return "Aguardando aprovação"
+        if self.reprovado:
+            return "Sem SLA (reprovado)"
         if self.encerrado:
             return "Cumprido" if self.cor != VERMELHO else "Vencido"
         return {VERDE: "No prazo", AMARELO: "Atenção", VERMELHO: "Vencido"}[self.cor]
@@ -139,6 +142,8 @@ class SituacaoSLA:
     def texto_restante(self) -> str:
         if self.aguardando_aprovacao:
             return "o SLA começa depois da aprovação"
+        if self.reprovado:
+            return "reprovado na aprovação: a TI não executou"
         if self.cor == VERMELHO:
             return f"vencido há {_horas(self.consumidas - self.horas)} úteis"
         return f"faltam {_horas(self.restantes)} úteis"
@@ -150,7 +155,7 @@ def situacao(chamado, agora: datetime | None = None) -> SituacaoSLA:
     inicio = getattr(chamado, "inicio_sla", chamado.criado_em)
     if inicio is None:  # aguardando aprovação (ou reprovado): o SLA da TI não começou
         return SituacaoSLA(cor=VERDE, horas=horas, consumidas=0.0, prazo=None, encerrado=encerrado,
-                           aguardando_aprovacao=not encerrado)
+                           aguardando_aprovacao=not encerrado, reprovado=encerrado)
     fim = chamado.resolvido_em if encerrado else (agora or timezone.now())
     consumidas = horas_uteis_entre(inicio, fim)
     if consumidas >= horas:

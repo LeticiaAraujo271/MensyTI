@@ -1,4 +1,5 @@
 {% extends "painel/base.html" %}
+{% load formatacao %}
 {% block titulo %}{{ chamado.protocolo }} · Painel de TI{% endblock %}
 {% block conteudo %}
 <p><a href="{% url 'painel:fila' %}">← Voltar à fila</a></p>
@@ -6,7 +7,7 @@
   <h1>{{ chamado.protocolo }}</h1>
   <span class="selo p{{ chamado.prioridade }}">{{ chamado.get_prioridade_display }}</span>
   <span class="status {{ chamado.status }}" id="status-atual">{{ chamado.get_status_display }}</span>
-  {% include "painel/_sla.html" with s=chamado.sla %}
+  {% if not chamado.sla.aguardando_aprovacao %}{% include "painel/_sla.html" with s=chamado.sla %}{% endif %}
 </div>
 
 <div class="grade">
@@ -29,7 +30,7 @@
     <div class="sla-cartao {{ s.cor }}">
       <div class="sla-linha">
         <b>SLA: {{ s.horas }}h úteis</b>
-        <span>{% if s.encerrado %}resolvido com {{ s.percentual }}% do prazo{% else %}{{ s.percentual }}% consumido · {{ s.texto_restante }}{% endif %}</span>
+        <span>{% if s.reprovado or s.aguardando_aprovacao %}{{ s.texto_restante }}{% elif s.encerrado %}resolvido com {{ s.percentual }}% do prazo{% else %}{{ s.percentual }}% consumido · {{ s.texto_restante }}{% endif %}</span>
       </div>
       <div class="sla-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ s.percentual }}"
            aria-label="SLA consumido"><span style="width: {% if s.percentual > 100 %}100{% else %}{{ s.percentual }}{% endif %}%"></span></div>
@@ -94,11 +95,12 @@
         {% if p.observacao %}<p class="pre">{{ p.observacao }}</p>{% endif %}
       </div>
     {% endfor %}
-    {% elif chamado.status == S.RESOLVIDO or chamado.status == S.FECHADO %}
+    {% elif not chamado.sla.reprovado and chamado.status == S.RESOLVIDO or not chamado.sla.reprovado and chamado.status == S.FECHADO %}
     <h3>Pesquisa de satisfação</h3>
     <p><small>Enviada ao colaborador; ainda sem resposta.</small></p>
     {% endif %}
 
+    {% if chamado.aberto or not chamado.sla.reprovado %}{# reprovado: não há ação possível #}
     <h2>Ações</h2>
     <div class="acoes">
       {% if chamado.aberto and chamado.responsavel_id != user.id %}
@@ -132,7 +134,7 @@
         <button type="submit">Reclassificar</button>
       </form>
       {% endif %}
-      {% if not chamado.aberto %}
+      {% if not chamado.aberto and not chamado.sla.reprovado %}
       <form method="post" action="{% url 'painel:acao' chamado.protocolo %}" class="linha">{% csrf_token %}
         <input type="hidden" name="acao" value="reabrir">
         <input type="text" name="nota" placeholder="Motivo da reabertura" required>
@@ -140,6 +142,7 @@
       </form>
       {% endif %}
     </div>
+    {% endif %}
 
     {% if chamado.status == S.AGUARDANDO_APROVACAO %}
     <p class="aviso">⏳ Aguardando aprovação: a TI só executa e resolve depois que o coordenador e o gerente
@@ -159,7 +162,7 @@
     <h2>Conversa com o colaborador</h2>
     <div class="conversa" id="conversa" data-url="{% url 'painel:mensagens' chamado.protocolo %}" data-ultimo="{{ ultimo_id }}">
       {% for m in mensagens %}
-        <div class="msg {{ m.autor }}"><span class="quem">{% if m.analista %}{{ m.analista.get_full_name|default:m.analista.get_username }} (TI){% else %}{{ m.get_autor_display }}{% endif %} · {{ m.criada_em|date:"d/m H:i" }}</span>{{ m.texto|linebreaksbr }}</div>
+        <div class="msg {{ m.autor }}"><span class="quem">{% if m.analista %}{{ m.analista.get_full_name|default:m.analista.get_username }} (TI){% else %}{{ m.get_autor_display }}{% endif %} · {{ m.criada_em|date:"d/m H:i" }}</span>{{ m.texto|whatsapp }}</div>
       {% empty %}
         <p class="vazio">Sem mensagens.</p>
       {% endfor %}
@@ -203,6 +206,11 @@
   const status = document.getElementById("status-atual");
   let ultimo = parseInt(caixa.dataset.ultimo || "0", 10);
   function esc(t) { const d = document.createElement("div"); d.textContent = t; return d.innerHTML.replace(/\n/g, "<br>"); }
+  // Mesma formatação do WhatsApp do servidor (filtro "whatsapp"): escapa antes de formatar.
+  function formatar(t) {
+    return esc(t).replace(/\*([^*\n<]+)\*/g, "<strong>$1</strong>")
+      .replace(/(^|[\s(>])_([^_\n<]+)_(?=[\s).,!?:;<]|$)/g, "$1<em>$2</em>").replace(/~([^~\n<]+)~/g, "<s>$1</s>");
+  }
   caixa.scrollTop = caixa.scrollHeight;
   setInterval(async function () {
     if (document.hidden) return;
@@ -214,7 +222,7 @@
       d.mensagens.forEach(function (m) {
         const div = document.createElement("div");
         div.className = "msg " + m.autor;
-        div.innerHTML = '<span class="quem">' + esc(m.analista ? m.analista + " (TI)" : m.autor_nome) + " · " + m.hora + "</span>" + esc(m.texto);
+        div.innerHTML = '<span class="quem">' + esc(m.analista ? m.analista + " (TI)" : m.autor_nome) + " · " + m.hora + "</span>" + formatar(m.texto);
         caixa.appendChild(div);
         ultimo = m.id;
       });

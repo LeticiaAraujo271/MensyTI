@@ -1,0 +1,198 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 135 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: digisac, messages, painel, portal, staticfiles
+  Apply all migrations: admin, auth, bot, chamados, contenttypes, orientacoes, sessions
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying auth.0001_initial... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying bot.0001_initial... OK
+  Applying bot.0002_centro_custo... OK
+  Applying orientacoes.0001_initial... OK
+  Applying orientacoes.0002_categoria_sla_horas... OK
+  Applying orientacoes.0003_sla_das_categorias... OK
+  Applying chamados.0001_initial... OK
+  Applying chamados.0002_sla_e_pesquisa... OK
+  Applying chamados.0003_sla_dos_chamados_existentes... OK
+  Applying chamados.0004_feriado... OK
+  Applying chamados.0005_feriados_nacionais... OK
+  Applying chamados.0006_centro_custo... OK
+  Applying chamados.0007_aprovacoes... OK
+  Applying orientacoes.0004_orientacao_exige_aprovacao... OK
+  Applying orientacoes.0005_requisicao_de_material... OK
+  Applying orientacoes.0006_mais_itens_de_material_e_toner... OK
+  Applying sessions.0001_initial...test_chamado_guarda_o_centro_de_custo_separado (apps.bot.tests.test_orquestrador.CentroDeCustoTest.test_chamado_guarda_o_centro_de_custo_separado) ... ok
+test_analista_responde_e_resolve (apps.bot.tests.test_orquestrador.OrquestradorTest.test_analista_responde_e_resolve) ... ok
+test_canal_whatsapp_desligado_nao_afeta_o_portal (apps.bot.tests.test_orquestrador.OrquestradorTest.test_canal_whatsapp_desligado_nao_afeta_o_portal) ... ok
+test_chamado_nao_duplica_na_mesma_conversa (apps.bot.tests.test_orquestrador.OrquestradorTest.test_chamado_nao_duplica_na_mesma_conversa) ... ok
+test_chamado_recebe_sla_da_categoria (apps.bot.tests.test_orquestrador.OrquestradorTest.test_chamado_recebe_sla_da_categoria) ... ok
+test_chamado_sem_categoria_usa_sla_de_outros (apps.bot.tests.test_orquestrador.OrquestradorTest.test_chamado_sem_categoria_usa_sla_de_outros) ... ok
+test_conversa_inativa_expira (apps.bot.tests.test_orquestrador.OrquestradorTest.test_conversa_inativa_expira) ... ok
+test_falha_do_whatsapp_nao_perde_mensagens (apps.bot.tests.test_orquestrador.OrquestradorTest.test_falha_do_whatsapp_nao_perde_mensagens) ... 2026-11-25 10:44:55,416 ERROR apps.canais.whatsapp: Falha ao enviar mensagem pelo WhatsApp (conversa #1).
+Traceback (most recent call last):
+  File "<projeto>\apps\canais\whatsapp.py", line 44, in entregar
+    self.cliente.enviar_texto(conversa.identificador, texto)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<projeto>\apps\bot\tests\test_orquestrador.py", line 34, in enviar_texto
+    raise ConnectionError("provedor fora do ar")
+ConnectionError: provedor fora do ar
+ok
+test_fora_do_horario_fica_na_fila_sem_perder_mensagens (apps.bot.tests.test_orquestrador.OrquestradorTest.test_fora_do_horario_fica_na_fila_sem_perder_mensagens) ... ok
+test_incidente_critico_tem_prioridade_critica (apps.bot.tests.test_orquestrador.OrquestradorTest.test_incidente_critico_tem_prioridade_critica) ... ok
+test_mensagem_repetida_nao_duplica (apps.bot.tests.test_orquestrador.OrquestradorTest.test_mensagem_repetida_nao_duplica) ... 2026-11-25 10:44:55,730 INFO apps.bot.orquestrador: Mensagem msg-1 já processada; ignorando.
+ok
+test_nao_resolvido_abre_chamado_com_protocolo (apps.bot.tests.test_orquestrador.OrquestradorTest.test_nao_resolvido_abre_chamado_com_protocolo) ... ok
+test_pesquisa_espera_mais_que_o_timeout_normal (apps.bot.tests.test_orquestrador.OrquestradorTest.test_pesquisa_espera_mais_que_o_timeout_normal) ... ok
+test_pesquisa_expirada_nao_muda_resultado (apps.bot.tests.test_orquestrador.OrquestradorTest.test_pesquisa_expirada_nao_muda_resultado) ... ok
+test_pesquisa_insatisfeito_exige_observacao (apps.bot.tests.test_orquestrador.OrquestradorTest.test_pesquisa_insatisfeito_exige_observacao) ... ok
+test_pesquisa_resposta_invalida_pergunta_de_novo (apps.bot.tests.test_orquestrador.OrquestradorTest.test_pesquisa_resposta_invalida_pergunta_de_novo) ... ok
+test_pesquisa_satisfeito_com_observacao_opcional (apps.bot.tests.test_orquestrador.OrquestradorTest.test_pesquisa_satisfeito_com_observacao_opcional) ... ok
+test_registrar_pesquisa_valida_observacao (apps.bot.tests.test_orquestrador.OrquestradorTest.test_registrar_pesquisa_valida_observacao) ... ok
+test_resolvido_registra_avaliacao_e_encerra (apps.bot.tests.test_orquestrador.OrquestradorTest.test_resolvido_registra_avaliacao_e_encerra) ... ok
+test_senha_nao_e_gravada (apps.bot.tests.test_orquestrador.OrquestradorTest.test_senha_nao_e_gravada) ... ok
+test_chamado_aguarda_aprovacao_sem_contar_sla (apps.chamados.test_aprovacoes.AprovacaoTest.test_chamado_aguarda_aprovacao_sem_contar_sla) ... ok
+test_coordenador_e_gerente_aprovam_e_chamado_entra_na_fila (apps.chamados.test_aprovacoes.AprovacaoTest.test_coordenador_e_gerente_aprovam_e_chamado_entra_na_fila) ... ok
+test_fila_mostra_status_aguardando_aprovacao (apps.chamados.test_aprovacoes.AprovacaoTest.test_fila_mostra_status_aguardando_aprovacao) ... ok
+test_gerente_so_decide_depois_do_coordenador (apps.chamados.test_aprovacoes.AprovacaoTest.test_gerente_so_decide_depois_do_coordenador) ... ok
+test_link_decidido_nao_decide_de_novo (apps.chamados.test_aprovacoes.AprovacaoTest.test_link_decidido_nao_decide_de_novo) ... ok
+test_link_invalido (apps.chamados.test_aprovacoes.AprovacaoTest.test_link_invalido) ... ok
+test_painel_mostra_aprovacoes_e_registra_decisao_com_evidencia (apps.chamados.test_aprovacoes.AprovacaoTest.test_painel_mostra_aprovacoes_e_registra_decisao_com_evidencia) ... ok
+test_reprovacao_exige_motivo_e_encerra (apps.chamados.test_aprovacoes.AprovacaoTest.test_reprovacao_exige_motivo_e_encerra) ... ok
+test_ti_nao_executa_antes_da_aprovacao (apps.chamados.test_aprovacoes.AprovacaoTest.test_ti_nao_executa_antes_da_aprovacao) ... ok
+test_links_vao_por_email_um_de_cada_vez (apps.chamados.test_aprovacoes.EmailAprovacaoTest.test_links_vao_por_email_um_de_cada_vez) ... ok
+test_dashboard_conta_aguardando_e_reprovado (apps.chamados.test_aprovacoes.ExcelComAprovacaoTest.test_dashboard_conta_aguardando_e_reprovado) ... ok
+test_aponta_o_que_falta (apps.chamados.test_aprovacoes.TestarEmailTest.test_aponta_o_que_falta) ... ok
+test_envia_email_de_teste (apps.chamados.test_aprovacoes.TestarEmailTest.test_envia_email_de_teste) ... ok
+test_amarelo_a_partir_da_metade (apps.chamados.tests.Cores.test_amarelo_a_partir_da_metade) ... ok
+test_resolvido_congela_o_sla (apps.chamados.tests.Cores.test_resolvido_congela_o_sla) ... ok
+test_resolvido_depois_do_prazo_fica_vencido (apps.chamados.tests.Cores.test_resolvido_depois_do_prazo_fica_vencido) ... ok
+test_verde_antes_da_metade (apps.chamados.tests.Cores.test_verde_antes_da_metade) ... ok
+test_vermelho_quando_vence (apps.chamados.tests.Cores.test_vermelho_quando_vence) ... ok
+test_cadastrar_feriado_no_admin_atualiza_na_hora (apps.chamados.tests.Feriados.test_cadastrar_feriado_no_admin_atualiza_na_hora) ... ok
+test_feriado_nao_conta_nas_horas_consumidas (apps.chamados.tests.Feriados.test_feriado_nao_conta_nas_horas_consumidas) ... ok
+test_feriado_nao_conta_no_prazo (apps.chamados.tests.Feriados.test_feriado_nao_conta_no_prazo) ... ok
+test_feriados_nacionais (apps.chamados.tests.Feriados.test_feriados_nacionais) ... ok
+test_migracao_cadastrou_os_feriados_nacionais (apps.chamados.tests.Feriados.test_migracao_cadastrou_os_feriados_nacionais) ... ok
+test_72h_uteis_sao_sete_dias_uteis_e_duas_horas (apps.chamados.tests.HorasUteis.test_72h_uteis_sao_sete_dias_uteis_e_duas_horas) ... ok
+test_aberto_a_noite_comeca_a_contar_as_8h (apps.chamados.tests.HorasUteis.test_aberto_a_noite_comeca_a_contar_as_8h) ... ok
+test_fim_de_semana_nao_conta (apps.chamados.tests.HorasUteis.test_fim_de_semana_nao_conta) ... ok
+test_horas_entre_descontam_noite_e_fim_de_semana (apps.chamados.tests.HorasUteis.test_horas_entre_descontam_noite_e_fim_de_semana) ... ok
+test_soma_dentro_do_mesmo_dia (apps.chamados.tests.HorasUteis.test_soma_dentro_do_mesmo_dia) ... ok
+test_soma_passa_para_o_dia_seguinte (apps.chamados.tests.HorasUteis.test_soma_passa_para_o_dia_seguinte) ... ok
+test_canal_desligado_ignora (apps.digisac.tests.WebhookTest.test_canal_desligado_ignora) ... ok
+test_exige_token (apps.digisac.tests.WebhookTest.test_exige_token) ... ok
+test_reenvio_do_webhook_nao_duplica (apps.digisac.tests.WebhookTest.test_reenvio_do_webhook_nao_duplica) ... 2026-11-25 10:45:20,634 INFO apps.digisac.client: [simulação] POST /api/v1/messages {'contactId': 'c1', 'text': 'Olá! 👋 Eu sou o assistente virtual da *Central de TI*.\nVou te passar as orientações padrão para os problemas mais comuns e, se não resolver, abro um chamado para a equipe de TI.\n\n🔒 _Nunca envie senhas ou códigos de verificação por aqui._'}
+2026-11-25 10:45:20,711 INFO apps.digisac.client: [simulação] POST /api/v1/messages {'contactId': 'c1', 'text': 'Para começar, qual é o seu *nome completo*?'}
+2026-11-25 10:45:20,716 INFO apps.bot.orquestrador: Mensagem abc já processada; ignorando.
+ok
+test_negrito_sem_abrir_brecha_de_html (apps.painel.tests.FormatacaoWhatsAppTest.test_negrito_sem_abrir_brecha_de_html) ... ok
+test_analista_ve_fila_e_historico (apps.painel.tests.PainelTest.test_analista_ve_fila_e_historico) ... ok
+test_atender_responder_e_resolver (apps.painel.tests.PainelTest.test_atender_responder_e_resolver) ... ok
+test_detalhe_mostra_pesquisa_respondida (apps.painel.tests.PainelTest.test_detalhe_mostra_pesquisa_respondida) ... ok
+test_excel_tem_dashboard_com_filtros_e_graficos (apps.painel.tests.PainelTest.test_excel_tem_dashboard_com_filtros_e_graficos) ... ok
+test_exige_login (apps.painel.tests.PainelTest.test_exige_login) ... ok
+test_exportar_excel_com_os_campos_pedidos (apps.painel.tests.PainelTest.test_exportar_excel_com_os_campos_pedidos) ... ok
+test_exportar_respeita_filtro_e_permissao (apps.painel.tests.PainelTest.test_exportar_respeita_filtro_e_permissao) ... ok
+test_fila_e_detalhe_mostram_sla (apps.painel.tests.PainelTest.test_fila_e_detalhe_mostram_sla) ... ok
+test_filtro_e_alerta_de_sla_vencido (apps.painel.tests.PainelTest.test_filtro_e_alerta_de_sla_vencido) ... ok
+test_painel_mostra_centro_de_custo (apps.painel.tests.PainelTest.test_painel_mostra_centro_de_custo) ... ok
+test_reclassificar_muda_o_sla (apps.painel.tests.PainelTest.test_reclassificar_muda_o_sla) ... ok
+test_usuario_sem_perfil_nao_acessa (apps.painel.tests.PainelTest.test_usuario_sem_perfil_nao_acessa) ... ok
+test_ciclo_completo_sem_enviar_nada_ao_digisac (apps.painel.tests.SimuladorWhatsAppTest.test_ciclo_completo_sem_enviar_nada_ao_digisac) ... ok
+test_exige_login (apps.painel.tests.SimuladorWhatsAppTest.test_exige_login) ... ok
+test_novo_contato_e_apagar_testes (apps.painel.tests.SimuladorWhatsAppTest.test_novo_contato_e_apagar_testes) ... ok
+test_localhost_do_vscode_mantem_o_nome (apps.portal.test_atalhos.AtalhoPorPorta.test_localhost_do_vscode_mantem_o_nome) ... ok
+test_no_codespaces_usa_o_endereco_publico_da_8000 (apps.portal.test_atalhos.AtalhoPorPorta.test_no_codespaces_usa_o_endereco_publico_da_8000) ... ok
+test_porta_do_painel_e_da_administracao_levam_para_a_8000 (apps.portal.test_atalhos.AtalhoPorPorta.test_porta_do_painel_e_da_administracao_levam_para_a_8000) ... ok
+test_porta_principal_continua_no_chat (apps.portal.test_atalhos.AtalhoPorPorta.test_porta_principal_continua_no_chat) ... ok
+test_qualquer_caminho_das_portas_extras_vai_para_a_8000 (apps.portal.test_atalhos.AtalhoPorPorta.test_qualquer_caminho_das_portas_extras_vai_para_a_8000) ... ok
+test_mostra_o_motivo_em_portugues (apps.portal.test_atalhos.FalhaCsrf.test_mostra_o_motivo_em_portugues) ... 2026-11-25 10:45:53,833 WARNING apps.portal.csrf: CSRF recusado: CSRF cookie not set. | host= | origin= | caminho=/painel/login/
+ok
+test_login_no_painel_com_verificacao_csrf (apps.portal.test_atalhos.LoginComCookiesProprios.test_login_no_painel_com_verificacao_csrf) ... ok
+test_desligado_por_padrao (apps.portal.test_atalhos.SemAtalhos.test_desligado_por_padrao) ... ok
+test_clique_duplo_nao_duplica (apps.portal.tests.PortalTest.test_clique_duplo_nao_duplica) ... 2026-11-25 10:45:55,708 INFO apps.bot.orquestrador: Mensagem mesmo-id-123 já processada; ignorando.
+ok
+test_colaborador_nao_ve_conversa_de_outro (apps.portal.tests.PortalTest.test_colaborador_nao_ve_conversa_de_outro) ... ok
+test_fluxo_completo_ate_o_protocolo (apps.portal.tests.PortalTest.test_fluxo_completo_ate_o_protocolo) ... ok
+test_limite_de_mensagens (apps.portal.tests.PortalTest.test_limite_de_mensagens) ... ok
+test_pagina_abre (apps.portal.tests.PortalTest.test_pagina_abre) ... ok
+test_resposta_do_analista_aparece_no_chat (apps.portal.tests.PortalTest.test_resposta_do_analista_aparece_no_chat) ... ok
+test_validacao_de_entrada (apps.portal.tests.PortalTest.test_validacao_de_entrada) ... ok
+test_configuracao_completa (apps.digisac.tests.TestarDigisacTest.test_configuracao_completa) ... ok
+test_valores_de_exemplo_contam_como_faltando (apps.digisac.tests.TestarDigisacTest.test_valores_de_exemplo_contam_como_faltando) ... ok
+test_le_e_ignora_itens_invalidos (apps.portal.test_atalhos.LerAtalhos.test_le_e_ignora_itens_invalidos) ... ok
+test_grava_mantendo_comentarios_e_acrescenta_no_fim (apps.portal.test_comandos.ArquivoEnv.test_grava_mantendo_comentarios_e_acrescenta_no_fim) ... ok
+test_le_valor_e_ignora_texto_de_exemplo (apps.portal.test_comandos.ArquivoEnv.test_le_valor_e_ignora_texto_de_exemplo) ... ok
+test_exige_terminal_interativo (apps.portal.test_comandos.ConfigurarIntegracoes.test_exige_terminal_interativo) ... ok
+test_fora_do_windows_explica_o_que_fazer (apps.portal.test_comandos.ServicoWindows.test_fora_do_windows_explica_o_que_fazer) ... ok
+test_tarefa_liga_ao_entrar_e_religa_se_cair (apps.portal.test_comandos.ServicoWindows.test_tarefa_liga_ao_entrar_e_religa_se_cair) ... ok
+test_coordenador_e_gerente_precisam_ser_pessoas_diferentes (apps.bot.tests.test_engine.Aprovacao.test_coordenador_e_gerente_precisam_ser_pessoas_diferentes) ... ok
+test_criacao_de_usuario_tambem_exige_aprovacao (apps.bot.tests.test_engine.Aprovacao.test_criacao_de_usuario_tambem_exige_aprovacao) ... ok
+test_email_do_aprovador_invalido (apps.bot.tests.test_engine.Aprovacao.test_email_do_aprovador_invalido) ... ok
+test_liberar_acesso_pede_coordenador_e_gerente (apps.bot.tests.test_engine.Aprovacao.test_liberar_acesso_pede_coordenador_e_gerente) ... ok
+test_nao_pode_aprovar_a_propria_solicitacao (apps.bot.tests.test_engine.Aprovacao.test_nao_pode_aprovar_a_propria_solicitacao) ... ok
+test_outras_orientacoes_nao_pedem_aprovacao (apps.bot.tests.test_engine.Aprovacao.test_outras_orientacoes_nao_pedem_aprovacao) ... ok
+test_centro_de_custo_invalido (apps.bot.tests.test_engine.CentroDeCusto.test_centro_de_custo_invalido) ... ok
+test_pergunta_o_centro_de_custo_depois_do_setor (apps.bot.tests.test_engine.CentroDeCusto.test_pergunta_o_centro_de_custo_depois_do_setor) ... ok
+test_quem_ja_tinha_cadastro_so_informa_o_centro_de_custo (apps.bot.tests.test_engine.CentroDeCusto.test_quem_ja_tinha_cadastro_so_informa_o_centro_de_custo) ... ok
+test_seguranca_escala_na_hora_com_prioridade_critica (apps.bot.tests.test_engine.Critico.test_seguranca_escala_na_hora_com_prioridade_critica) ... ok
+test_texto_livre_de_phishing_escala (apps.bot.tests.test_engine.Critico.test_texto_livre_de_phishing_escala) ... ok
+test_mantem_frases_normais (apps.bot.tests.test_engine.DadosSensiveis.test_mantem_frases_normais) ... ok
+test_remove_senha_codigo_e_cpf (apps.bot.tests.test_engine.DadosSensiveis.test_remove_senha_codigo_e_cpf) ... ok
+test_colaborador_conhecido_vai_direto_ao_menu (apps.bot.tests.test_engine.Identificacao.test_colaborador_conhecido_vai_direto_ao_menu) ... ok
+test_email_de_outro_dominio_e_recusado (apps.bot.tests.test_engine.Identificacao.test_email_de_outro_dominio_e_recusado) ... ok
+test_identificacao_configuravel_com_matricula (apps.bot.tests.test_engine.Identificacao.test_identificacao_configuravel_com_matricula) ... ok
+test_nome_invalido (apps.bot.tests.test_engine.Identificacao.test_nome_invalido) ... ok
+test_pede_nome_setor_email_e_mostra_menu (apps.bot.tests.test_engine.Identificacao.test_pede_nome_setor_email_e_mostra_menu) ... ok
+test_categoria_sem_orientacao_vai_direto_para_chamado (apps.bot.tests.test_engine.NaoResolvido.test_categoria_sem_orientacao_vai_direto_para_chamado) ... ok
+test_com_chamado_aberto_bot_fica_em_silencio (apps.bot.tests.test_engine.NaoResolvido.test_com_chamado_aberto_bot_fica_em_silencio) ... ok
+test_fora_do_horario_informa_janela_configurada (apps.bot.tests.test_engine.NaoResolvido.test_fora_do_horario_informa_janela_configurada) ... ok
+test_nao_por_texto (apps.bot.tests.test_engine.NaoResolvido.test_nao_por_texto) ... ok
+test_pede_descricao_e_abre_chamado_com_resumo (apps.bot.tests.test_engine.NaoResolvido.test_pede_descricao_e_abre_chamado_com_resumo) ... ok
+test_solicitacao_de_acesso_sempre_abre_chamado (apps.bot.tests.test_engine.NaoResolvido.test_solicitacao_de_acesso_sempre_abre_chamado) ... ok
+test_comandos_globais (apps.bot.tests.test_engine.Navegacao.test_comandos_globais) ... ok
+test_nao_muta_estado_de_entrada (apps.bot.tests.test_engine.Navegacao.test_nao_muta_estado_de_entrada) ... ok
+test_tres_opcoes_invalidas_oferece_chamado (apps.bot.tests.test_engine.Navegacao.test_tres_opcoes_invalidas_oferece_chamado) ... ok
+test_ver_outra_orientacao (apps.bot.tests.test_engine.Navegacao.test_ver_outra_orientacao) ... ok
+test_aparece_no_menu_antes_de_outros_com_todos_os_itens (apps.bot.tests.test_engine.RequisicaoDeMaterial.test_aparece_no_menu_antes_de_outros_com_todos_os_itens) ... ok
+test_demais_itens_abrem_chamado_direto (apps.bot.tests.test_engine.RequisicaoDeMaterial.test_demais_itens_abrem_chamado_direto) ... ok
+test_itens_de_valor_ou_risco_exigem_aprovacao (apps.bot.tests.test_engine.RequisicaoDeMaterial.test_itens_de_valor_ou_risco_exigem_aprovacao) ... ok
+test_texto_livre_acha_o_item (apps.bot.tests.test_engine.RequisicaoDeMaterial.test_texto_livre_acha_o_item) ... ok
+test_toner_abre_chamado_na_impressora (apps.bot.tests.test_engine.RequisicaoDeMaterial.test_toner_abre_chamado_na_impressora) ... ok
+test_resolve_avalia_e_encerra (apps.bot.tests.test_engine.Resolvido.test_resolve_avalia_e_encerra) ... ok
+test_sim_por_texto (apps.bot.tests.test_engine.Resolvido.test_sim_por_texto) ... ok
+test_descricao_clara_vai_direto_para_a_orientacao (apps.bot.tests.test_engine.TextoLivre.test_descricao_clara_vai_direto_para_a_orientacao) ... ok
+test_erro_de_acesso_sugere_orientacoes (apps.bot.tests.test_engine.TextoLivre.test_erro_de_acesso_sugere_orientacoes) ... ok
+test_relato_vira_descricao_sem_repetir (apps.bot.tests.test_engine.TextoLivre.test_relato_vira_descricao_sem_repetir) ... ok
+test_sem_resultado_conta_como_tentativa (apps.bot.tests.test_engine.TextoLivre.test_sem_resultado_conta_como_tentativa) ... ok
+test_fechamento_de_ticket (apps.bot.tests.test_webhook.InterpretarWebhook.test_fechamento_de_ticket) ... ok
+test_lista_de_mensagens (apps.bot.tests.test_webhook.InterpretarWebhook.test_lista_de_mensagens) ... ok
+test_mensagem_do_atendente_ou_bot (apps.bot.tests.test_webhook.InterpretarWebhook.test_mensagem_do_atendente_ou_bot) ... ok
+test_mensagem_do_colaborador (apps.bot.tests.test_webhook.InterpretarWebhook.test_mensagem_do_colaborador) ... ok
+test_outros_eventos_e_lixo (apps.bot.tests.test_webhook.InterpretarWebhook.test_outros_eventos_e_lixo) ... ok
+
+----------------------------------------------------------------------
+Ran 135 tests in 63.192s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+ OK
+System check identified no issues (0 silenced).

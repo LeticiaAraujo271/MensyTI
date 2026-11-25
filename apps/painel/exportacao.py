@@ -49,8 +49,10 @@ CORES_QUALIDADE = {
     "Muito satisfeito": VERDE, "Satisfeito": "7FC3BA", "Insatisfeito": "F79009",
     "Muito insatisfeito": "B42318", SEM_RESPOSTA: "C4CBCA",
 }
-SITUACOES_SLA = ("No prazo", "Atenção", "Vencido", "Cumprido")
-CORES_SITUACAO = {"No prazo": VERDE_MEDIO, "Atenção": "E2A100", "Vencido": "B42318", "Cumprido": VERDE}
+# Inclui as solicitações com aprovação: o SLA da TI ainda não começou ou nunca começou (reprovada).
+SITUACOES_SLA = ("No prazo", "Atenção", "Vencido", "Cumprido", "Aguardando aprovação", "Sem SLA (reprovado)")
+CORES_SITUACAO = {"No prazo": VERDE_MEDIO, "Atenção": "E2A100", "Vencido": "B42318", "Cumprido": VERDE,
+                  "Aguardando aprovação": "F5D78E", "Sem SLA (reprovado)": "B8BFBE"}
 STATUS = tuple(Chamado.Status.labels)
 STATUS_ABERTOS = tuple(Chamado.Status(s).label for s in Chamado.ABERTOS)
 
@@ -77,6 +79,8 @@ CORES_SLA = {
     sla.VERDE: ("DCFAE6", "067647"),
     sla.AMARELO: ("FEF0C7", "8A5A00"),
     sla.VERMELHO: ("FEE4E2", "B42318"),
+    "aprovacao": ("FFF4D6", "8A5A00"),
+    "reprovado": ("F3F5F5", "5E6665"),
 }
 FORMATO_DATA = "dd/mm/yyyy hh:mm"
 COLUNAS_DATA = {"Prazo do SLA", "Aberto em", "Data do fechamento"}
@@ -127,7 +131,7 @@ def _linha_do_chamado(ch) -> tuple:
         _data(ch.resolvido_em) if not ch.aberto else None,
         pesquisa.get_resposta_display() if pesquisa else SEM_RESPOSTA,
         pesquisa.observacao if pesquisa else "",
-    ), s.cor
+    ), ("aprovacao" if s.aguardando_aprovacao else "reprovado" if s.reprovado else s.cor)
 
 
 def _aba_chamados(ws, linhas) -> None:
@@ -451,7 +455,8 @@ def planilha_chamados(chamados) -> bytes:
     linha = max(u, cab + 14) + 3
 
     d.titulo_secao(linha, "Situação do SLA", "No prazo: menos da metade do SLA · Atenção: metade ou mais · "
-                   "Vencido: prazo estourado · Cumprido: resolvido dentro do prazo.")
+                   "Vencido: prazo estourado · Cumprido: resolvido dentro do prazo · Aguardando aprovação: "
+                   "o SLA começa depois do coordenador e do gerente · Sem SLA: reprovado na aprovação.")
     cab = linha + 2
     p, u = d.tabela_contagem(cab, "Situação", "SLA", SITUACOES_SLA, total)
     d.grafico_rosca(cab, p, u, f"H{cab}", [CORES_SITUACAO[s] for s in SITUACOES_SLA])

@@ -7,6 +7,7 @@ atende pelo **painel de TI**. Conversas e chamados ficam no mesmo banco, qualque
 
 - Processo de referência: [docs/Central_TI_Multicanal_Bizagi.bpmn](docs/Central_TI_Multicanal_Bizagi.bpmn)
 - Especificação: [docs/especificacao.md](docs/especificacao.md)
+- Diário de testes de execução (25/11/2026, com imagens e registro de defeitos): [docs/diario_testes_2026-11-25.md](docs/diario_testes_2026-11-25.md)
 
 O chat e o painel têm um fundo em marca d'água (roçadeira e trator de roçada) em
 [apps/portal/static/marca/](apps/portal/static/marca/). Para incluir o **logo oficial da Mensori**,

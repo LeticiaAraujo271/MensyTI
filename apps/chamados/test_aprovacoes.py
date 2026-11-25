@@ -109,6 +109,15 @@ class AprovacaoTest(TestCase):
         self.assertEqual(self.gerente.situacao, A.CANCELADA)
         self.assertIn("Não faz parte da função", self.chamado.solucao)
         self.assertIn("*reprovada*", self.mensagens_do_sistema()[-1])
+        # SLA de solicitação reprovada não é "Cumprido": a TI nunca executou
+        self.assertTrue(self.chamado.sla.reprovado)
+        self.assertEqual(self.chamado.sla.rotulo, "Sem SLA (reprovado)")
+        # O detalhe não promete pesquisa nem oferece "Reabrir" para solicitação reprovada
+        self.client.login(username="ana", password="senha-forte-123")
+        r = self.client.get(f"/painel/chamado/{self.chamado.protocolo}/")
+        self.assertContains(r, "Sem SLA (reprovado)")
+        self.assertNotContains(r, "ainda sem resposta")
+        self.assertNotContains(r, 'value="reabrir"')
         conversa = Conversa.objects.get(identificador="u1")
         self.assertFalse(conversa.ativa)
         self.assertEqual(conversa.etapa, engine.ENCERRADO)
@@ -196,3 +205,27 @@ class TestarEmailTest(TestCase):
     def test_envia_email_de_teste(self):
         call_command("testar_email", "--para", "ti@exemplo.com", stdout=io.StringIO())
         self.assertEqual(mail.outbox[0].to, ["ti@exemplo.com"])
+
+
+@override_settings(CENTRAL=CENTRAL_TESTE, WHATSAPP_ATIVO=False, APROVACAO_ENVIAR_EMAIL=False)
+class ExcelComAprovacaoTest(TestCase):
+    def test_dashboard_conta_aguardando_e_reprovado(self):
+        import io as _io
+
+        from openpyxl import load_workbook
+
+        from apps.painel.exportacao import planilha_chamados
+
+        call_command("popular_orientacoes", verbosity=0)
+        orq = ConversationOrchestrator(WebChannel(), horario=HorarioFixo(True))
+        for ident in ("u1", "u2"):
+            for t in (*IDENT, *PEDIDO):
+                orq.receber(ident, t)
+        reprovado = Chamado.objects.order_by("pk").last()
+        aprovacoes.decidir(reprovado.aprovacoes.get(nivel=1), False, "Não autorizado")
+        wb = load_workbook(_io.BytesIO(planilha_chamados(list(Chamado.objects.all()))))
+        chamados = [c.value for c in wb["Chamados"]["F"][1:]]
+        self.assertCountEqual(chamados, ["Aguardando aprovação", "Sem SLA (reprovado)"])
+        textos = [c.value for linha in wb["Dashboard"].iter_rows() for c in linha if isinstance(c.value, str)]
+        self.assertIn("Aguardando aprovação", textos)
+        self.assertIn("Sem SLA (reprovado)", textos)

@@ -137,3 +137,4 @@ a.botao:hover { background: var(--primaria-forte); border-color: var(--primaria-
 .aprov-pagina { max-width: 640px; margin: 32px auto; }
 .aprov-botoes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
 button.perigo { background: var(--sla-vermelho); border-color: var(--sla-vermelho); color: #fff; }
+.sla.reprovado { color: var(--suave); background: var(--fundo); border-style: dashed; }

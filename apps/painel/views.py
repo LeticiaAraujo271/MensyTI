@@ -62,7 +62,9 @@ def _filtrar(request, limite=300):
     chamados = list(qs[:limite] if limite else qs)
     cor_sla = request.GET.get("sla", "")
     if cor_sla in (sla.VERDE, sla.AMARELO, sla.VERMELHO):
-        chamados = [c for c in chamados if c.sla.cor == cor_sla]
+        # Aguardando aprovação ou reprovado: o SLA da TI não está correndo (não entra nas cores).
+        chamados = [c for c in chamados if c.sla.cor == cor_sla
+                    and not (c.sla.aguardando_aprovacao or c.sla.reprovado)]
     return chamados, status, cor_sla, busca
 
 
