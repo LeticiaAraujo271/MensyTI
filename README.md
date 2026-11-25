@@ -79,7 +79,7 @@ Status do chamado: `aberto → em_fila → em_atendimento ⇄ aguardando_usuario
 
 ## Abrir pelo GitHub (sem instalar nada)
 
-[![Abrir no GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/gz5n88ks84-glitch/MensyTI?quickstart=1)
+[![Abrir no GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/LeticiaAraujo271/MensyTI?quickstart=1)
 
 O **GitHub Codespaces** liga a Central num computador do próprio GitHub e abre a tela no navegador,
 de qualquer lugar (inclusive fora da rede da empresa).
@@ -140,7 +140,7 @@ que rodam o Python direto, sem passar por nenhum shell.
 
 ### 1. Abrir o projeto no VS Code
 
-No VS Code: **Ctrl+Shift+P → "Git: Clone"** → cole `https://github.com/gz5n88ks84-glitch/MensyTI.git`
+No VS Code: **Ctrl+Shift+P → "Git: Clone"** → cole `https://github.com/LeticiaAraujo271/MensyTI.git`
 → escolha a pasta → **Open**. (Se baixou o ZIP: **File → Open Folder** na pasta descompactada.)
 
 ### 2. Criar o ambiente do Python (venv)
