@@ -35,6 +35,13 @@ else:  # rodando num terminal (ex.: GitHub Codespaces): mostra o log na tela tam
     handlers = [arquivo, tela]
 logging.basicConfig(level=logging.INFO, handlers=handlers, force=True)
 
+# Um arquivo de PID por processo, gravado ANTES de carregar o Django: assim o "manage.py servico"
+# encontra e encerra até um servidor que travou ao ligar (sem nunca abrir a porta).
+ARQUIVO_PID = BASE_DIR / "logs" / f"servidor-{os.getpid()}.pid"
+ARQUIVO_PID.write_text(str(os.getpid()))
+atexit.register(lambda: ARQUIVO_PID.unlink(missing_ok=True))
+logging.getLogger("servir").info("Iniciando o servidor (processo %s)...", os.getpid())
+
 
 def main() -> None:
     from decouple import AutoConfig
@@ -55,10 +62,6 @@ def main() -> None:
     for p, caminho in atalhos.items():
         log.info("  atalho: http://%s:%s/ abre %s", host, p, caminho)
     portas = [porta, *atalhos]
-    # PID para o "manage.py servico" saber qual processo parar ao reiniciar.
-    arquivo_pid = BASE_DIR / "logs" / "servidor.pid"
-    arquivo_pid.write_text(str(os.getpid()))
-    atexit.register(lambda: arquivo_pid.unlink(missing_ok=True))
     serve(app, listen=" ".join(f"{host}:{p}" for p in portas), threads=8, ident="CentralTI")
 
 

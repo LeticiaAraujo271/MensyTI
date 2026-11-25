@@ -22,9 +22,27 @@ coloque o arquivo como `logo.svg` ou `logo.png` nessa pasta e religue a Central
 | `/admin/` | Administradores: base de conhecimento, usuários, perfis, conversas, métricas |
 | `/webhooks/digisac/?token=...` | Provedor de WhatsApp (só com `WHATSAPP_ATIVO=true`) |
 
-Os endereços acima são relativos ao computador onde a Central roda (ex.: `http://127.0.0.1:8000/`
-nele mesmo). Para os colegas acessarem pela rede, veja o passo
-[6. Acesso dos colegas pela rede](#6-acesso-dos-colegas-pela-rede).
+### Acesso rápido: qual link usar
+
+A Central **não fica hospedada na internet**: ela roda num computador (o seu ou o do GitHub
+Codespaces). Por isso não existe um link fixo que abra de qualquer lugar. Use a linha que
+corresponde a onde ela está ligada:
+
+| Onde a Central está ligada | Chat | Painel da TI | Administração |
+|---|---|---|---|
+| **Neste computador** (abra no navegador dele) | <http://127.0.0.1:8000/> | <http://127.0.0.1:8000/painel/> | <http://127.0.0.1:8000/admin/> |
+| **Em outro computador da rede** (depois do passo 6) | `http://NOME-DO-COMPUTADOR:8000/` | `http://NOME-DO-COMPUTADOR:8000/painel/` | `http://NOME-DO-COMPUTADOR:8000/admin/` |
+| **No GitHub Codespaces** | porta **8000** na aba PORTS | porta **8001** na aba PORTS | porta **8002** na aba PORTS |
+
+- **Os links de `127.0.0.1` dizem "não é possível acessar esse site"?** A Central está desligada
+  neste computador. Rode a tarefa do VS Code **"Central: segundo plano - status"** e, se ela não
+  estiver respondendo, **"Central: segundo plano - reiniciar"** (ou `python manage.py servico
+  reiniciar`). Se ela nunca foi instalada aqui, veja o passo 5.
+- **Não tem a Central instalada no seu computador?** Abra pelo GitHub, sem instalar nada:
+  [![Abrir no GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/LeticiaAraujo271/MensyTI?quickstart=1)
+  e use as portas 8000, 8001 e 8002 (veja [Abrir pelo GitHub](#abrir-pelo-github-sem-instalar-nada)).
+- O painel e a administração pedem usuário e senha (veja **Equipe de TI**; no Codespaces, o
+  arquivo `ACESSO_CODESPACE.txt`).
 
 ## Fluxo (BPMN)
 

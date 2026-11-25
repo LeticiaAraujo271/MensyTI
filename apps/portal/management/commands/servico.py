@@ -85,14 +85,20 @@ def _pids_nas_portas(portas: list[int]) -> set[int]:
     return pids
 
 
+def _arquivos_pid() -> list[Path]:
+    # servidor-<pid>.pid: um por processo, gravado logo no início do servir.py (pega até os que
+    # travaram ao ligar, sem abrir a porta). servidor.pid: formato antigo.
+    return [*ARQUIVO_PID.parent.glob("servidor-*.pid"), ARQUIVO_PID]
+
+
 def _parar() -> None:
     if _tarefa_existe():
         _cmd("schtasks", "/End", "/TN", TAREFA)
     pids = _pids_nas_portas(_portas())
-    if ARQUIVO_PID.exists():
+    for arquivo in _arquivos_pid():
         try:
-            pids.add(int(ARQUIVO_PID.read_text().strip()))
-        except ValueError:
+            pids.add(int(arquivo.read_text().strip()))
+        except (OSError, ValueError):
             pass
     for pid in pids:
         if pid != os.getpid() and _processo_python(pid):  # só encerra servidores Python desta Central
@@ -100,8 +106,9 @@ def _parar() -> None:
                 os.kill(pid, signal.SIGTERM)
             except OSError:
                 pass
-    ARQUIVO_PID.unlink(missing_ok=True)
     time.sleep(1)
+    for arquivo in _arquivos_pid():
+        arquivo.unlink(missing_ok=True)
 
 
 def _xml_da_tarefa() -> str:
@@ -122,6 +129,9 @@ def _xml_da_tarefa() -> str:
     <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
     <StartWhenAvailable>true</StartWhenAvailable>
     <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+    <!-- 4 = prioridade normal. O padrão das tarefas (7) deixa processador e disco em prioridade
+         baixa: o Django levava de 15 s a mais de 1 min para ligar e às vezes parecia travado. -->
+    <Priority>4</Priority>
     <RestartOnFailure><Interval>PT1M</Interval><Count>999</Count></RestartOnFailure>
     <Enabled>true</Enabled>
   </Settings>
@@ -178,8 +188,8 @@ class Command(BaseCommand):
         if _no_ar(porta):
             self.stdout.write(self.style.SUCCESS(f"Central no ar: http://127.0.0.1:{porta}/"))
         else:
-            self.stdout.write(self.style.ERROR("A Central não está respondendo. Veja logs\\servidor.log e "
-                                               "logs\\saida.log."))
+            self.stdout.write(self.style.ERROR("A Central não está respondendo. Rode o reiniciar (tarefa \"Central: "
+                                               "segundo plano - reiniciar\"); se continuar, veja logs\\servidor.log."))
 
     def _reiniciar(self):
         if not _tarefa_existe():
@@ -187,7 +197,7 @@ class Command(BaseCommand):
         _parar()
         _cmd("schtasks", "/Run", "/TN", TAREFA)
         porta = _porta()
-        if _no_ar(porta, 30):
+        if _no_ar(porta, 60):
             self.stdout.write(self.style.SUCCESS(f"Central religada: http://127.0.0.1:{porta}/"))
         else:
             raise CommandError("A Central não respondeu. Veja logs\\servidor.log e logs\\saida.log.")
@@ -211,7 +221,7 @@ class Command(BaseCommand):
             raise CommandError(f"O Windows não criou a tarefa: {r.stderr.strip() or r.stdout.strip()}")
         _cmd("schtasks", "/Run", "/TN", TAREFA)
         porta = _porta()
-        if not _no_ar(porta, 30):
+        if not _no_ar(porta, 60):
             raise CommandError("A tarefa foi criada, mas a Central não respondeu. Veja logs\\servidor.log.")
         self.stdout.write(self.style.SUCCESS(
             "\nPronto! A Central está rodando em segundo plano e liga sozinha ao entrar no Windows."))

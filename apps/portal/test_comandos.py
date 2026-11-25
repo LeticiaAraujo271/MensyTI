@@ -48,6 +48,7 @@ class ServicoWindows(SimpleTestCase):
         self.assertIn("<RestartOnFailure><Interval>PT1M</Interval><Count>999</Count>", xml)
         self.assertIn("<ExecutionTimeLimit>PT0S</ExecutionTimeLimit>", xml)
         self.assertIn("<RunLevel>LeastPrivilege</RunLevel>", xml)
+        self.assertIn("<Priority>4</Priority>", xml)  # prioridade normal: liga em segundos
 
     def test_fora_do_windows_explica_o_que_fazer(self):
         with mock.patch.object(servico, "WINDOWS", False):
